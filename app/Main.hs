@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Options.Applicative
-import System.Directory (createDirectoryIfMissing, doesFileExist, getHomeDirectory, getCurrentDirectory)
+import System.Directory (canonicalizePath, createDirectoryIfMissing, doesFileExist, getHomeDirectory, getCurrentDirectory)
 import System.FilePath (takeDirectory, takeFileName, (</>))
 import System.Process (callProcess, readProcessWithExitCode, readProcess)
 import System.Exit (ExitCode(ExitSuccess))
@@ -13,6 +13,7 @@ import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HM
 import Control.Exception (catch, IOException)
 
+import AgdaLib
 import Templates
 
 data UseUntracked = UseUntrackedTrue | UseUntrackedFalse | UseUntrackedAsk
@@ -27,6 +28,7 @@ data PagdaOpts
   | Build (Maybe String)
   | GenAgda
   | Shell (Maybe String)
+  | AgdaLib2Nix FilePath
   | Debug
   deriving Show
 
@@ -42,12 +44,15 @@ pagdaParser cfg = subparser
       (progDesc "Launch an interactive shell"))
   <> command "debug" (info (pure Debug <**> helper)
       (progDesc "Debug information"))
+  <> command "agdaLib2nix" (info (AgdaLib2Nix <$> agdaLibArg <**> helper)
+      (progDesc "Generate a nix derivation based on an agda-lib file"))
   )
   where
     initCmd = Init
       <$> argument str (metavar "PROJECT_NAME" <> help "Project name")
       <*> argument str (metavar "PROJECT_ROOT" <> help "Project root directory")
     buildArg = optional $ argument str (metavar "[DERIVATION]" <> help "Optional target (default: default)")
+    agdaLibArg = argument str (metavar "AGDA_LIB_FILE" <> help "Path to .agda-lib file")
 
 parserInfo :: ParserInfo (Config, PagdaOpts)
 parserInfo = info ((,) <$> configParser <*> pagdaParser configParser <**> helper)
@@ -210,12 +215,20 @@ onDebug = do
   root <- getProjectRoot
   putStrLn $ "Project root: " ++ root
 
+onAgdaLib2Nix :: FilePath -> IO ()
+onAgdaLib2Nix path = do
+  lib <- parseAgdaLib path
+  absPath <- canonicalizePath path
+  putStrLn $ agdaLibToNix absPath lib
+
 main :: IO ()
 main = do
   (cfg, opts) <- customExecParser (prefs showHelpOnEmpty) parserInfo
 
   case opts of
     Init name root -> onInit name root
+
+    AgdaLib2Nix path -> onAgdaLib2Nix path
 
     Debug -> onDebug
 
