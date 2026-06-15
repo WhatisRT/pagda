@@ -1,0 +1,4 @@
+name: multi
+depend: standard-library agda-stdlib-classes
+  agda-stdlib-meta agda-stdlib-utils
+include: src lib

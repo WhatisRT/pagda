@@ -43,3 +43,19 @@ test-suite e2e
                       , text
     build-tool-depends: pagda:pagda
     default-language:   GHC2021
+
+test-suite regression
+    import:           warnings
+    type:             exitcode-stdio-1.0
+    main-is:          Main.hs
+    hs-source-dirs:   test/regression, app
+    other-modules:    AgdaLib
+    build-depends:    base >=4.18 && <5
+                    , bytestring
+                    , parsec >=3.1
+                    , filepath
+                    , directory
+                    , tasty
+                    , tasty-golden
+                    , tasty-hunit
+    default-language: GHC2021

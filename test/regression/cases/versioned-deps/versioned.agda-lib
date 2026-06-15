@@ -1,0 +1,5 @@
+name: versioned
+depend:
+  standard-library-2.3
+  agda-stdlib-classes
+include: src

@@ -1,0 +1,5 @@
+name: blanky
+
+depend: standard-library
+
+include: src

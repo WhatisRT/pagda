@@ -1,0 +1,4 @@
+name: flagged
+flags: --safe --without-K
+depend: standard-library
+include: src

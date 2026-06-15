@@ -1,0 +1,3 @@
+name: trailing  
+depend: standard-library 
+include: .

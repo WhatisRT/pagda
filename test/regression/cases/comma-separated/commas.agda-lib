@@ -1,0 +1,4 @@
+name: commas
+depend: foo, bar,
+  baz
+include: src

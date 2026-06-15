@@ -1,0 +1,5 @@
+name: baseline
+depend: standard-library
+        standard-library-classes
+        standard-library-meta
+include: .

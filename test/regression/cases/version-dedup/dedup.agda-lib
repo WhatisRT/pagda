@@ -1,0 +1,4 @@
+name: dedup
+depend: standard-library-2.0
+  standard-library
+include: .

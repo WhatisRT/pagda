@@ -1,0 +1,4 @@
+name: inline  -- the name
+depend: standard-library -- main dependency
+  agda-stdlib-classes -- another one
+include: src

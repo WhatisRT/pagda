@@ -1,0 +1,4 @@
+name: tabbed
+depend:
+	standard-library
+include: .

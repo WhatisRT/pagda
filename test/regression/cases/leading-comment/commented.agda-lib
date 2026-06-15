@@ -1,0 +1,4 @@
+-- A library, described in a comment
+name: commented
+depend: standard-library
+include: src
