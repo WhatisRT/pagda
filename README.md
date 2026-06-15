@@ -33,23 +33,43 @@ To pull pagda into a flake / NixOS / home-manager configuration, add it as an in
 
 ### Customizing the build via `pagda.nix`
 
-The `.agda-lib` file governs the library name and everything directly
-relevant to `agda` itself. For things it cannot express, such as
-metadata or special build instructions, add an optional `pagda.nix`
-next to it. It is a function of `agdaPackages` that returns an
-[`overrideAttrs`](https://nixos.org/manual/nixpkgs/stable/#sec-pkg-overrideAttrs)
-function. Here, `gen` refers the package generated from the `.agda-lib`
-file.
+The `.agda-lib` file governs the library name and its dependencies, and
+those dependencies resolve by name against whatever `agdaPackages`
+provides (pinned, along with the rest of nixpkgs and agda.nix, by your
+`flake.lock`). For anything beyond that, add an optional `pagda.nix`
+next to it. It is a function of `{ pkgs }` returning an attribute set
+with two optional fields:
+
+- `overlay` — an overlay applied to `agdaPackages`, to **pin** a
+  dependency to a particular version/source or to **add** one that
+  `agdaPackages` does not provide.
+- `overrideAttrs` — an
+  [`overrideAttrs`](https://nixos.org/manual/nixpkgs/stable/#sec-pkg-overrideAttrs)
+  function applied to the generated package (`gen` below) for metadata
+  or build tweaks.
 
 ```nix
 # pagda.nix
-{ agdaPackages }:
-gen: {
-  # Override the version (it defaults to "0.1").
-  version = "1.2.0";
+{ pkgs }:
+{
+  # Pin standard-library to a tag; anything not mentioned keeps the
+  # version agdaPackages provides.
+  overlay = final: prev: {
+    standard-library = prev.standard-library.overrideAttrs (_: {
+      version = "2.3";
+      src = pkgs.fetchFromGitHub {
+        owner = "agda";
+        repo = "agda-stdlib";
+        rev = "v2.3";
+        hash = "sha256-…";
+      };
+    });
+  };
 
-  # Set package metadata.
-  meta = gen.meta // { description = "My Agda library"; };
+  # Tweak the generated package.
+  overrideAttrs = gen: {
+    meta = gen.meta // { description = "My Agda library"; };
+  };
 }
 ```
 

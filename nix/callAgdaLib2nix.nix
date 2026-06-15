@@ -12,13 +12,16 @@
 #       src = ./.;
 #     }
 #
-# The .agda-lib is the source of truth for name and dependencies. For the
-# nix-specific things it cannot express, pass an `overrideAttrs` function:
+# The .agda-lib is the source of truth for name and dependencies, which resolve
+# by name against agdaPackages. To pin or add a dependency, pass an `overlay`
+# (applied to agdaPackages); to tweak the project derivation, pass an
+# `overrideAttrs` function. Both are optional (the pagda.nix escape hatch):
 #
-#       overrideAttrs = prev: { buildInputs = prev.buildInputs ++ [ ... ]; }
+#       overlay = final: prev: { standard-library = prev.standard-library.overrideAttrs ...; };
+#       overrideAttrs = prev: { buildInputs = prev.buildInputs ++ [ ... ]; };
 { pkgs, pagda }:
 
-{ agdaPackages, src, overrideAttrs ? (_: { }) }:
+{ agdaPackages, src, overlay ? null, overrideAttrs ? (_: { }) }:
 
 let
   inherit (pkgs) lib runCommand;
@@ -42,7 +45,10 @@ let
   generated = runCommand "${libFile}.nix" { } ''
     ${lib.getExe pagda} agdaLib2nix ${src + "/${libFile}"} > "$out"
   '';
-  derivation = lib.callPackageWith agdaPackages generated { };
+  # pagda.nix may supply an overlay to pin or add dependencies; anything it
+  # doesn't touch stays as agdaPackages provides.
+  agdaPackages' = if overlay == null then agdaPackages else agdaPackages.overrideScope overlay;
+  derivation = lib.callPackageWith agdaPackages' generated { };
 
   # The generated `src = ./.;` is a placeholder, point it at the real source.
   withSrc = derivation.overrideAttrs (_: { inherit src; });

@@ -53,15 +53,18 @@ unquoteDecl DecEq-Test = derive-DecEq ((quote Test , DecEq-Test) ∷ [])
           };
 
           # The library derivation is derived from the .agda-lib file.
-          # If a pagda.nix exists, it provides an overrideAttrs function
-          # to customize the nix-specific parts of the build.
+          # An optional pagda.nix can pin or add dependencies (overlay)
+          # and customize the build (overrideAttrs).
+          pagdaNix =
+            if builtins.pathExists ./pagda.nix
+            then import ./pagda.nix { inherit pkgs; }
+            else { };
+
           default = pagda.lib.${system}.callAgdaLib2nix {
             agdaPackages = pkgs.agdaPackages;
             src = ./.;
-            overrideAttrs =
-              if builtins.pathExists ./pagda.nix
-              then import ./pagda.nix { agdaPackages = pkgs.agdaPackages; }
-              else (_: { });
+            overlay = pagdaNix.overlay or null;
+            overrideAttrs = pagdaNix.overrideAttrs or (_: { });
           };
         in
           {
