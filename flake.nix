@@ -18,14 +18,32 @@
     in
     {
       packages = forAllSystems (pkgs: rec {
+        # Built without the test suites so installs are fast and robust.
         pagda = import ./default.nix { inherit pkgs; };
         default = pagda;
       });
 
+      apps = forAllSystems (pkgs: rec {
+        pagda = {
+          type = "app";
+          program = nixpkgs.lib.getExe (import ./default.nix { inherit pkgs; });
+        };
+        default = pagda;
+      });
+
+      # An overlay so downstream flakes / NixOS / home-manager configs can pull
+      # pagda into their package set: `overlays = [ pagda.overlays.default ]`.
+      overlays.default = final: prev: {
+        pagda = import ./default.nix { pkgs = final; };
+      };
+
       # `nix flake check` builds pagda and runs its test suites,
       # including the end-to-end tests in test/e2e.
       checks = forAllSystems (pkgs: {
-        pagda = import ./default.nix { inherit pkgs; };
+        pagda = import ./default.nix {
+          inherit pkgs;
+          doCheck = true;
+        };
       });
 
       devShells = forAllSystems (pkgs: {

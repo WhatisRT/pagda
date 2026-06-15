@@ -10,7 +10,26 @@ Pagda is also completely compatible with the built-in package management functio
 
 To see the list of supported commands, run `pagda help`.
 
-Note: currently, the only way to run Pagda is by cloning this repository. It'll be packaged at some later point.
+## Installation
+
+At the moment, the only supported installation method is via Nix. With flakes enabled you can run:
+
+```
+nix profile install github:WhatisRT/Pagda  # install pagda onto your PATH
+```
+
+This builds pagda from source on first use. A prebuilt binary cache may be added later.
+
+To pull pagda into a flake / NixOS / home-manager configuration, add it as an input and use the overlay:
+
+```nix
+{
+  inputs.pagda.url = "github:WhatisRT/Pagda";
+  # in your nixpkgs config:
+  #   overlays = [ pagda.overlays.default ];
+  # then reference pkgs.pagda (e.g. in environment.systemPackages).
+}
+```
 
 ## Configuration options
 
@@ -26,8 +45,8 @@ There are three ways to set options for Pagda: a global configuration file, a co
 Build pagda and run its test suites with nix:
 
 ```
-nix build          # build the executable (tests run in the check phase)
-nix flake check    # build and test
+nix build          # build the executable (no tests, matches the install)
+nix flake check    # build and run the test suites
 nix develop        # dev shell with ghc, cabal, git
 ```
 
