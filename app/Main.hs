@@ -31,6 +31,7 @@ data PagdaOpts
   | Shell (Maybe String)
   | AgdaLib2Nix FilePath
   | Regenerate
+  | Check [String]
   | Debug
   deriving Show
 
@@ -50,6 +51,9 @@ pagdaParser cfg = subparser
       (progDesc "Generate a nix derivation based on an agda-lib file"))
   <> command "regenerate" (info (pure Regenerate <**> helper)
       (progDesc "Regenerate flake.nix from the current template"))
+  <> command "check" (info (Check <$> checkArgs <**> helper)
+      (progDesc "Typecheck the project (or a file) with agda; extra arguments are passed to agda"
+        <> forwardOptions))
   )
   where
     initCmd = Init
@@ -57,6 +61,10 @@ pagdaParser cfg = subparser
       <*> argument str (metavar "PROJECT_ROOT" <> help "Project root directory")
     buildArg = optional $ argument str (metavar "[DERIVATION]" <> help "Optional target (default: default)")
     agdaLibArg = argument str (metavar "AGDA_LIB_FILE" <> help "Path to .agda-lib file")
+    -- forwardOptions (above) lets unrecognized flags through to here, so they
+    -- reach agda; a positional file (if any) lands here too.
+    checkArgs = many (strArgument (metavar "[AGDA_ARG...]"
+        <> help "File to check and/or flags to pass to agda"))
 
 parserInfo :: ParserInfo (Config, PagdaOpts)
 parserInfo = info ((,) <$> configParser <*> pagdaParser configParser <**> helper)
@@ -214,6 +222,29 @@ onDebug = do
   root <- getProjectRoot
   putStrLn $ "Project root: " ++ root
 
+-- | Typecheck inside the project's dev shell. With no arguments,
+-- typecheck the whole library (@--build-library@); otherwise the
+-- arguments (a file to check and/or agda flags) are passed straight
+-- through to agda.
+onCheck :: Config -> [String] -> IO ()
+onCheck cfg agdaArgs = do
+  root <- getProjectRoot
+  installable <- buildDerivation cfg Nothing
+  -- Record the dev environment in a per-project profile. A profile is a GC
+  -- root, so the agda derivation (agda plus the libraries) survives
+  -- `nix-collect-garbage` and is reused by later checks instead of rebuilt.
+  let profile = root </> ".pagda" </> "check-env"
+      agdaArgs' = if null agdaArgs then ["--build-library"] else agdaArgs
+      args = [ "--experimental-features", "nix-command flakes"
+             , "develop", installable, "--profile", profile
+             , "--command", "agda" ] ++ agdaArgs'
+  createDirectoryIfMissing True (takeDirectory profile)
+  callProcess "nix" args
+  -- Keep only the current generation, so old dev environments stop being GC roots.
+  callProcess "nix"
+    [ "--experimental-features", "nix-command flakes"
+    , "profile", "wipe-history", "--profile", profile ]
+
 onAgdaLib2Nix :: FilePath -> IO ()
 onAgdaLib2Nix path = do
   lib <- parseAgdaLib path
@@ -257,3 +288,4 @@ main = do
             Build mderiv -> runNix "build" mderiv cfg' True
             GenAgda -> runNix "build" (Just ".#agda") cfg' False
             Shell mderiv -> runNix "develop" mderiv cfg' True
+            Check agdaArgs -> onCheck cfg' agdaArgs

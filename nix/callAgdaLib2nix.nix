@@ -40,7 +40,7 @@ let
   # `{ mkDerivation, <deps...> }: mkDerivation { ... }`, so callPackageWith
   # supplies mkDerivation and each dependency from agdaPackages by name.
   generated = runCommand "${libFile}.nix" { } ''
-    ${lib.getExe pagda} agdaLib2nix "${src}/${libFile}" > "$out"
+    ${lib.getExe pagda} agdaLib2nix ${src + "/${libFile}"} > "$out"
   '';
   derivation = lib.callPackageWith agdaPackages generated { };
 

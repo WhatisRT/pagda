@@ -1,0 +1,11 @@
+exit code: 0
+=== stdout ===
+=== stderr ===
+=== file: Test.agda ===
+module Test where
+=== file: flake.nix ===
+# dummy flake for testing
+{ }
+=== file: nix-args.txt ===
+--experimental-features nix-command flakes develop .#default --profile $TESTDIR/.pagda/check-env --command agda --safe Test.agda
+--experimental-features nix-command flakes profile wipe-history --profile $TESTDIR/.pagda/check-env
