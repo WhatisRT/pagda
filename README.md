@@ -20,6 +20,12 @@ nix profile add github:WhatisRT/Pagda  # install pagda onto your PATH
 
 This builds pagda from source on first use. A prebuilt binary cache may be added later.
 
+If you already have installed pagda and want to update, run:
+
+```
+nix profile upgrade --refresh Pagda
+```
+
 To pull pagda into a flake / NixOS / home-manager configuration, add it as an input and use the overlay:
 
 ```nix
