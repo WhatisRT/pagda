@@ -44,8 +44,13 @@
           inherit pkgs;
           pagda = import ./default.nix { inherit pkgs; };
         };
-        docBackends = {
+        docBackends = rec {
           html = import ./nix/docBackends/html.nix { inherit pkgs; };
+          enhancedHtml = import ./nix/docBackends/enhancedHtml.nix {
+            inherit pkgs;
+            htmlBackend = html;
+            agdaDocs = import ./nix/agda-web-docs-lib.nix { inherit pkgs; };
+          };
         };
       });
 

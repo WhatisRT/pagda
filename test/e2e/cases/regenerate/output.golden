@@ -39,12 +39,12 @@ Regenerated $TESTDIR/flake.nix
             ];
           };
 
-          # The library derivation is derived from the .agda-lib file.
-          # An optional pagda.nix can pin or add dependencies (overlay)
-          # and customize the build (overrideAttrs).
+          # The library derivation is derived from the .agda-lib file. An
+          # optional pagda.nix can pin/add dependencies (overlay), customize
+          # the build (overrideAttrs), and pick a documentation backend (docs).
           pagdaNix =
             if builtins.pathExists ./pagda.nix
-            then import ./pagda.nix { inherit pkgs; }
+            then import ./pagda.nix { inherit pkgs; pagda = pagda.lib.${system}; }
             else { };
 
           default = pagda.lib.${system}.callAgdaLib2nix {
@@ -54,7 +54,7 @@ Regenerated $TESTDIR/flake.nix
             overrideAttrs = pagdaNix.overrideAttrs or (_: { });
           };
 
-          docs = (pagdaNix.docs or pagda.lib.${system}.docBackends.html) default;
+          docs = (pagdaNix.docs or (pagda.lib.${system}.docBackends.enhancedHtml { })) default;
         in
           {
             packages = {

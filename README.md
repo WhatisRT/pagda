@@ -1,4 +1,4 @@
-# Pagda, the package manager for Agda
+# Pagda, a package manager for Agda
 
 Pagda is a package manager built on top of [agda.nix](https://github.com/input-output-hk/agda.nix). This means it inherits the nice features of nix, such as:
 - Reproducable builds
@@ -37,8 +37,8 @@ The `.agda-lib` file governs the library name and its dependencies, and
 those dependencies resolve by name against whatever `agdaPackages`
 provides (pinned, along with the rest of nixpkgs and agda.nix, by your
 `flake.lock`). For anything beyond that, add an optional `pagda.nix`
-next to it. It is a function of `{ pkgs }` returning an attribute set
-with two optional fields:
+next to it. It is a function of `{ pkgs, pagda }` returning an attribute
+set with these optional fields:
 
 - `overlay` — an overlay applied to `agdaPackages`, to **pin** a
   dependency to a particular version/source or to **add** one that
@@ -50,7 +50,7 @@ with two optional fields:
 
 ```nix
 # pagda.nix
-{ pkgs }:
+{ pkgs, pagda }:
 {
   # Pin standard-library to a tag; anything not mentioned keeps the
   # version agdaPackages provides.
@@ -70,6 +70,9 @@ with two optional fields:
   overrideAttrs = gen: {
     meta = gen.meta // { description = "My Agda library"; };
   };
+
+  # Docs are offline by default; override e.g. to serve over HTTP with smaller footprint.
+  docs = pagda.docBackends.enhancedHtml { offline = false; };
 }
 ```
 
@@ -78,8 +81,17 @@ with two optional fields:
 `pagda doc` builds documentation for the project. It is exposed as the
 `docs` flake package, so `nix build .#docs` works too.
 
-By default, it simply uses Agda's `agda --html`. However, the backend
-is pluggable via `pagda.nix`'s `docs` field.
+By default it builds **enhanced** docs (via
+[agda-web-docs-lib](https://github.com/will-break-it/agda-web-docs-lib)):
+hyperlinked Agda HTML plus a sidebar, full-text search, dark/light theme and
+hover type previews.
+
+The backend is pluggable via `pagda.nix`'s `docs` field:
+
+```nix
+docs = pagda.docBackends.enhancedHtml { offline = false; }; # optimized for serving over HTTP (e.g. CI)
+docs = pagda.docBackends.html;                              # plain agda --html
+```
 
 ## Configuration options
 
