@@ -1,0 +1,74 @@
+exit code: 0
+=== stdout ===
+Found existing library file mylib.agda-lib; leaving it untouched.
+Wrote flake.nix
+=== stderr ===
+=== file: Foo.agda ===
+module Foo where
+=== file: flake.nix ===
+# Warning: only edit this file if you know what you're doing!
+# To customize the build, prefer the optional pagda.nix escape hatch.
+{
+  description = "Pagda project";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs";
+
+    flake-utils.url = "github:numtide/flake-utils";
+
+    agda-nix = {
+      url = "github:input-output-hk/agda.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    pagda.url = "github:WhatisRT/pagda";
+  };
+
+  outputs =
+    inputs@{
+      self,
+        nixpkgs,
+        flake-utils,
+        pagda,
+        ...
+    }:
+      flake-utils.lib.eachDefaultSystem (
+        system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [
+              inputs.agda-nix.overlays.default
+            ];
+          };
+
+          # The library derivation is derived from the .agda-lib file. An
+          # optional pagda.nix can pin/add dependencies (overlay), customize
+          # the build (overrideAttrs), and pick a documentation backend (docs).
+          pagdaNix =
+            if builtins.pathExists ./pagda.nix
+            then import ./pagda.nix { inherit pkgs; pagda = pagda.lib.${system}; }
+            else { };
+
+          default = pagda.lib.${system}.callAgdaLib2nix {
+            agdaPackages = pkgs.agdaPackages;
+            src = ./.;
+            overlay = pagdaNix.overlay or null;
+            overrideAttrs = pagdaNix.overrideAttrs or (_: { });
+          };
+
+          docs = (pagdaNix.docs or (pagda.lib.${system}.docBackends.enhancedHtml { })) default;
+        in
+          {
+            packages = {
+              inherit default docs;
+              agda = pkgs.agdaPackages.agda.withPackages
+                (builtins.filter (p: p ? isAgdaDerivation) default.buildInputs);
+            };
+          }
+      );
+}
+=== file: mylib.agda-lib ===
+name: mylib
+depend: standard-library
+include: .

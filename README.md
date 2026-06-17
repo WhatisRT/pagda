@@ -37,7 +37,26 @@ To pull pagda into a flake / NixOS / home-manager configuration, add it as an in
 }
 ```
 
-### Customizing the build via `pagda.nix`
+## Getting started
+
+To scaffold a fresh project:
+
+```
+pagda init myproject         # in ./myproject
+pagda init myproject --here  # in the current directory
+```
+
+To add pagda to an **existing** Agda project, run this in its directory:
+
+```
+pagda init --existing
+```
+
+This writes `flake.nix` and reuses the project's existing `.agda-lib`.
+It never overwrites existing files, so it is safe to run in a populated
+repository.
+
+## Customizing the build via `pagda.nix`
 
 The `.agda-lib` file governs the library name and its dependencies, and
 those dependencies resolve by name against whatever `agdaPackages`

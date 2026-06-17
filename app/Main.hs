@@ -3,8 +3,8 @@
 module Main (main) where
 
 import Options.Applicative
-import System.Directory (canonicalizePath, createDirectoryIfMissing, doesFileExist, findExecutable, getHomeDirectory, getCurrentDirectory)
-import System.FilePath (takeDirectory, takeFileName, (</>))
+import System.Directory (canonicalizePath, createDirectoryIfMissing, doesFileExist, findExecutable, getHomeDirectory, getCurrentDirectory, listDirectory)
+import System.FilePath (takeDirectory, takeExtension, takeFileName, (</>))
 import System.Process (callProcess, readProcess)
 import System.IO (hFlush, stdout)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
@@ -26,7 +26,7 @@ data Config = Config
   }
 
 data PagdaOpts
-  = Init (Maybe String) (Maybe FilePath) Bool
+  = Init (Maybe String) (Maybe FilePath) Bool Bool
   | Build (Maybe String)
   | GenAgda
   | Shell (Maybe String)
@@ -41,7 +41,7 @@ data PagdaOpts
 pagdaParser :: Parser Config -> Parser PagdaOpts
 pagdaParser cfg = subparser
   ( command "init" (info (initCmd <**> helper)
-      (progDesc "Initialize a new project"))
+      (progDesc "Initialize a project (use --existing to add pagda to an existing one)"))
   <> command "build" (info (Build <$> buildArg <**> helper)
       (progDesc "Build a project"))
   <> command "gen-agda" (info (pure GenAgda <**> helper)
@@ -70,6 +70,7 @@ pagdaParser cfg = subparser
       <$> optional (argument str (metavar "[PROJECT_NAME]" <> help "Project name (prompted if omitted)"))
       <*> optional (argument str (metavar "[PROJECT_ROOT]" <> help "Project root directory (prompted if omitted)"))
       <*> switch (long "here" <> help "Initialize in the current directory")
+      <*> switch (long "existing" <> help "Add pagda to an existing project in the current directory")
     buildArg = optional $ argument str (metavar "[DERIVATION]" <> help "Optional target (default: default)")
     agdaLibArg = argument str (metavar "AGDA_LIB_FILE" <> help "Path to .agda-lib file")
     -- forwardOptions (above) lets unrecognized flags through to here, so they
@@ -233,21 +234,44 @@ promptDefault label def = do
   answer <- getLine
   return $ if null answer then def else answer
 
--- | Missing name/root are prompted for interactively; --here uses the current
--- directory as the root (and may not be combined with an explicit root).
-onInit :: Maybe String -> Maybe FilePath -> Bool -> IO ()
-onInit mname mroot here = do
-  when (here && isJust mroot) $
-    fail "init: PROJECT_ROOT cannot be combined with --here"
-  projectName <- maybe (promptRequired "Project name") return mname
-  projectRoot <- if here
-    then getCurrentDirectory
-    else maybe (promptDefault "Project root" projectName) return mroot
-  createDirectoryIfMissing True projectRoot
-  let subst = substitute "example" projectName
-  writeFile (projectRoot </> "flake.nix") flakeNix
-  writeFile (projectRoot </> projectName ++ ".agda-lib") $ subst agdaLib
-  writeFile (projectRoot </> "Test.agda") testAgda
+-- | Initialize a project. By default this scaffolds a fresh project
+-- (a new directory, or the current one with --here) with flake.nix, a
+-- .agda-lib and a sample module; missing name/root are prompted
+-- for. With --existing it instead adds pagda to an existing project
+-- in the current directory. In this mode existing files are never
+-- overwritten and no sample module is added.
+onInit :: Maybe String -> Maybe FilePath -> Bool -> Bool -> IO ()
+onInit mname mroot here existing
+  | existing = do
+      when (here || isJust mroot) $
+        fail "init: --existing operates on the current directory and cannot be combined with --here or PROJECT_ROOT"
+      root <- getCurrentDirectory
+      findAgdaLibs root >>= \case
+        (lib:_) -> putStrLn $ "Found existing library file " ++ lib ++ "; leaving it untouched."
+        [] -> do
+          name <- maybe (promptRequired "Project name") return mname
+          writeFile (root </> name ++ ".agda-lib") (bareAgdaLib name)
+          putStrLn $ "Wrote " ++ name ++ ".agda-lib"
+      flakeExists <- doesFileExist (root </> "flake.nix")
+      if flakeExists
+        then putStrLn "flake.nix already exists; leaving it untouched (run `pagda regenerate` to update it)."
+        else writeFile (root </> "flake.nix") flakeNix >> putStrLn "Wrote flake.nix"
+  | otherwise = do
+      when (here && isJust mroot) $
+        fail "init: PROJECT_ROOT cannot be combined with --here"
+      projectName <- maybe (promptRequired "Project name") return mname
+      projectRoot <- if here
+        then getCurrentDirectory
+        else maybe (promptDefault "Project root" projectName) return mroot
+      createDirectoryIfMissing True projectRoot
+      let subst = substitute "example" projectName
+      writeFile (projectRoot </> "flake.nix") flakeNix
+      writeFile (projectRoot </> projectName ++ ".agda-lib") (subst agdaLib)
+      writeFile (projectRoot </> "Test.agda") testAgda
+
+-- | The .agda-lib files in a directory (non-recursive).
+findAgdaLibs :: FilePath -> IO [FilePath]
+findAgdaLibs dir = filter ((== ".agda-lib") . takeExtension) <$> listDirectory dir
 
 onDebug :: IO ()
 onDebug = do
@@ -313,7 +337,7 @@ main = do
   (cfg, opts) <- customExecParser (prefs showHelpOnEmpty) parserInfo
 
   case opts of
-    Init name root here -> onInit name root here
+    Init name root here existing -> onInit name root here existing
 
     AgdaLib2Nix path -> onAgdaLib2Nix path
 

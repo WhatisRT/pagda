@@ -75,6 +75,15 @@ agdaLib = unlines
   , "include: ."
   ]
 
+-- A minimal .agda-lib for adding pagda to an existing project that has none;
+-- the user fills in the dependencies their code needs.
+bareAgdaLib :: String -> String
+bareAgdaLib name = unlines
+  [ "name: " ++ name
+  , "depend:"
+  , "include: ."
+  ]
+
 testAgda :: String
 testAgda = unlines
   [ "module Test where"

@@ -1,0 +1,11 @@
+exit code: 0
+=== stdout ===
+Found existing library file mylib.agda-lib; leaving it untouched.
+flake.nix already exists; leaving it untouched (run `pagda regenerate` to update it).
+=== stderr ===
+=== file: flake.nix ===
+# my hand-written flake
+{ }
+=== file: mylib.agda-lib ===
+name: mylib
+include: .
