@@ -12,6 +12,7 @@ import System.Exit (ExitCode(..), exitFailure, exitWith)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Control.Monad (when)
 import Data.Char (toLower)
+import Data.List (intercalate, sort)
 import Data.Maybe (isJust)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as HM
@@ -278,6 +279,12 @@ onInit mname mroot here existing
         then getCurrentDirectory
         else maybe (promptDefault "Project root" projectName) return mroot
       createDirectoryIfMissing True projectRoot
+      -- Refuse to scaffold over an existing project
+      let isGenerated f = f == "flake.nix" || f == "Test.agda" || takeExtension f == ".agda-lib"
+      blockers <- sort . filter isGenerated <$> listDirectory projectRoot
+      when (not (null blockers)) $
+        fail $ "init: " ++ projectRoot ++ " already contains " ++ intercalate ", " blockers
+             ++ "; refusing to overwrite. To add pagda to an existing project, run `pagda init --existing`."
       let subst = substitute "example" projectName
       writeFile (projectRoot </> "flake.nix") flakeNix
       writeFile (projectRoot </> projectName ++ ".agda-lib") (subst agdaLib)

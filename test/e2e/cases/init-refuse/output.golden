@@ -1,0 +1,9 @@
+exit code: 1
+=== stdout ===
+=== stderr ===
+pagda: init: $TESTDIR already contains Test.agda, original.agda-lib; refusing to overwrite. To add pagda to an existing project, run `pagda init --existing`.
+=== file: Test.agda ===
+MY IMPORTANT CODE
+=== file: original.agda-lib ===
+name: original
+include: .
