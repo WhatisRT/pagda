@@ -1,0 +1,12 @@
+exit code: 0
+=== stdout ===
+=== stderr ===
+=== file: .gitignore ===
+result
+=== file: flake.nix ===
+# dummy flake for testing
+{ }
+=== file: nix-args.txt ===
+--experimental-features nix-command flakes build .#default
+=== file: result ===
+pretend nix build output

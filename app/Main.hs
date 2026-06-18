@@ -122,11 +122,11 @@ configParser = Config
 hasNix :: IO Bool
 hasNix = isJust <$> findExecutable "nix"
 
--- | Untracked files in the working tree. Outside a git repository this returns
--- nothing rather than failing.
+-- | Untracked files in the working tree, honoring .gitignore. Outside
+-- a git repository this returns nothing rather than failing.
 getUntracked :: IO [String]
 getUntracked = do
-  (code, out, _) <- readProcessWithExitCode "git" ["ls-files", "--others"] ""
+  (code, out, _) <- readProcessWithExitCode "git" ["ls-files", "--others", "--exclude-standard"] ""
   return $ case code of
     ExitSuccess -> filter (not . null) (lines out)
     ExitFailure _ -> []
