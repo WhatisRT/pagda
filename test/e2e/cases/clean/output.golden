@@ -1,0 +1,12 @@
+exit code: 0
+=== stdout ===
+Removed .pagda
+Removed _build
+Removed result
+Removed result-docs
+=== stderr ===
+=== file: Test.agda ===
+module Test where
+=== file: flake.nix ===
+# dummy flake for testing
+{ }

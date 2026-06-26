@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Options.Applicative
-import System.Directory (canonicalizePath, createDirectoryIfMissing, doesFileExist, findExecutable, getHomeDirectory, getCurrentDirectory, listDirectory)
+import System.Directory (canonicalizePath, createDirectoryIfMissing, doesFileExist, findExecutable, getHomeDirectory, getCurrentDirectory, listDirectory, removePathForcibly)
 import System.FilePath (takeDirectory, takeExtension, takeFileName, (</>))
 import System.Process (rawSystem, readProcessWithExitCode)
 import System.IO (hFlush, hPutStrLn, stdout, stderr)
@@ -12,7 +12,7 @@ import System.Exit (ExitCode(..), exitFailure, exitWith)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Control.Monad (when)
 import Data.Char (toLower)
-import Data.List (intercalate, sort)
+import Data.List (intercalate, isPrefixOf, sort)
 import Data.Maybe (isJust)
 import Data.Version (showVersion)
 import Paths_pagda (version)
@@ -41,6 +41,7 @@ data PagdaOpts
   | Check [String]
   | Doc
   | GenCi Bool Bool
+  | Clean
   | Debug
   deriving Show
 
@@ -70,6 +71,8 @@ pagdaParser cfg = subparser
         <*> switch (long "cache" <> help "Cache the Nix store via the GitHub Actions cache")
         <**> helper)
       (progDesc "Write a GitHub Actions CI workflow (.github/workflows/ci.yml)"))
+  <> command "clean" (info (pure Clean <**> helper)
+      (progDesc "Remove build artifacts (_build, result*, .pagda)"))
   )
   where
     initCmd = Init
@@ -366,6 +369,21 @@ onRegenerate = do
   writeFile path flakeNix
   putStrLn $ "Regenerated " ++ path
 
+-- | Remove build artifacts from the project root: Agda's @_build@, the nix
+-- build symlinks (@result@, @result-*@) and pagda's own @.pagda@.
+onClean :: IO ()
+onClean = do
+  root <- getProjectRoot
+  entries <- listDirectory root
+  let isArtifact f =
+        f `elem` ["_build", ".pagda", "result"] || "result-" `isPrefixOf` f
+      artifacts = sort (filter isArtifact entries)
+  if null artifacts
+    then putStrLn "Nothing to clean."
+    else mapM_
+      (\f -> removePathForcibly (root </> f) >> putStrLn ("Removed " ++ f))
+      artifacts
+
 -- | Write a GitHub Actions CI workflow to the project.
 onGenCi :: Bool -> Bool -> IO ()
 onGenCi pages cache = do
@@ -417,6 +435,8 @@ runPagda = do
     Regenerate -> onRegenerate
 
     GenCi pages cache -> onGenCi pages cache
+
+    Clean -> onClean
 
     Debug -> onDebug
 
