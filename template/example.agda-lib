@@ -1,5 +1,0 @@
-name: example
-depend: standard-library
-        standard-library-classes
-        standard-library-meta
-include: .
