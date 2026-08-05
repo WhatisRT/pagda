@@ -1,8 +1,16 @@
 # Basic documentation backend via `agda --html`
+#
+# `entryModule` (e.g. "Foo.Bar") designates the module the generated index.html
+# redirects to; when null, index.html lists the module pages instead.
 { pkgs }:
+
+{ entryModule ? null }:
 
 agdaLib:
 
+let
+  entry = if entryModule == null then "" else entryModule;
+in
 agdaLib.overrideAttrs (old: {
   pname = "${old.pname or "agda-library"}-docs";
   nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.cmark-gfm ];
@@ -27,6 +35,8 @@ agdaLib.overrideAttrs (old: {
       } > "''${md%.md}.html"
       rm "$md"
     done
+    # After the conversion above, so literate pages appear in the index.
+    sh ${./gen-index.sh} "$out" "${entry}"
     runHook postBuild
   '';
   installPhase = "true";

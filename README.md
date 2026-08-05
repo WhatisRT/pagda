@@ -155,11 +155,16 @@ By default it builds **enhanced** docs (via
 hyperlinked Agda HTML plus a sidebar, full-text search, dark/light theme and
 hover type previews.
 
+Both backends generate an `index.html` landing page. By default it lists the
+module pages; pass `entryModule` to redirect it to a specific module instead
+(its name as written in Agda, e.g. `Foo.Bar`).
+
 The backend is pluggable via `pagda.nix`'s `docs` field:
 
 ```nix
-docs = pagda.docBackends.enhancedHtml { offline = false; }; # optimized for serving over HTTP (e.g. CI)
-docs = pagda.docBackends.html;                              # plain agda --html
+docs = pagda.docBackends.enhancedHtml { entryModule = "Foo.Bar"; }; # land on a chosen module
+docs = pagda.docBackends.enhancedHtml { offline = false; };         # optimized for serving over HTTP (e.g. CI)
+docs = pagda.docBackends.html { };                                  # plain agda --html
 ```
 
 ## Continuous integration

@@ -4,16 +4,21 @@
 # by. When not given they are derived from the project's sources, so the sidebar
 # is populated automatically. The search index is embedded by default so search
 # works without a server; pass `offline = false` to load it via fetch
-# instead (smaller output, but must be served).
+# instead (smaller output, but must be served). `entryModule` (e.g. "Foo.Bar")
+# designates the module the generated index.html redirects to; when null,
+# index.html lists the module pages instead.
 { pkgs, htmlBackend, agdaDocs }:
 
-{ modules ? null, githubUrl ? null, backButtonUrl ? "/", offline ? true }:
+{ modules ? null, githubUrl ? null, backButtonUrl ? "/", offline ? true, entryModule ? null }:
 
 agdaLib:
 
 let
   inherit (pkgs) lib;
-  raw = htmlBackend agdaLib;
+  entry = if entryModule == null then "" else entryModule;
+  # htmlBackend's own index.html is dropped below and regenerated after
+  # agda-docs, so the options here don't matter.
+  raw = htmlBackend { } agdaLib;
 
   # Derive the project's top-level module prefixes from its source tree. Assumes
   # the usual `include: .`; pass `modules` explicitly for other include layouts.
@@ -50,8 +55,12 @@ pkgs.runCommand "${agdaLib.pname or "agda-library"}-docs"
     # agda-docs edits in place; the raw docs are a read-only store path.
     cp -r ${raw} build
     chmod -R u+w build
+    # Drop the basic backend's index.html so agda-docs only processes the real
+    # module pages; the final index.html is generated below.
+    rm -f build/index.html
     ${lib.getExe agdaDocs} process -i build -c ${config}
     ${offlinePostProcess}
+    sh ${./gen-index.sh} build "${entry}"
     mkdir -p "$out"
     cp -r build/. "$out"/
   ''
