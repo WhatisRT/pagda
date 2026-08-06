@@ -187,6 +187,7 @@ The workflow supports a couple of options:
 |-------|---------|---------|
 | `pages` | `false` | Build the docs. |
 | `deploy` | `true` | Deploy docs to GitHub Pages. Set `false` to instead upload them as a plain `docs` artifact for your own workflow to compose into an existing site. |
+| `docs-on-pr` | `true` | Also build (but not deploy) the docs on pull requests. Only applies when `pages` is set. |
 | `cache` | `false` | Cache the Nix store via the GitHub Actions cache. |
 | `working-directory` | `.` | Directory of the flake. |
 | `gc-max-store-size` | `1G` | Trim the Nix store to this size before caching. |

@@ -16,6 +16,8 @@ agdaLib.overrideAttrs (old: {
   nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.cmark-gfm ];
   buildPhase = ''
     runHook preBuild
+    # Reuse the interfaces the library build already produced
+    cp -r --no-preserve=mode ${agdaLib}/_build . 2>/dev/null || true
     find . \( -name '*.agda' -o -name '*.lagda' -o -name '*.lagda.md' \
               -o -name '*.lagda.rst' -o -name '*.lagda.tex' -o -name '*.lagda.org' \) -print0 \
       | while IFS= read -r -d "" f; do

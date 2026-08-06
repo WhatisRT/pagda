@@ -16,6 +16,12 @@ on:
           the deploy.
         type: boolean
         default: true
+      docs-on-pr:
+        description: >-
+          Also build the docs on pull requests. Ignored unless `pages`
+          is set.
+        type: boolean
+        default: true
       cache:
         description: Cache the Nix store via the GitHub Actions cache.
         type: boolean
@@ -46,17 +52,25 @@ jobs:
       - name: Type-check the library
         run: nix build .#default -L
 
-  # Build the documentation on the default branch (only when the caller passes
-  # pages: true). With deploy: true it uploads the GitHub Pages artifact for the
-  # deploy job below; with deploy: false it uploads a plain `docs` artifact for
-  # the caller to compose into its own deploy.
+  # Build the documentation when the caller passes pages: true — on the default
+  # branch (to upload/deploy, below) and, unless docs-on-pr is false, on pull
+  # requests too (build only, so a PR that breaks the docs fails there rather
+  # than after merge). With deploy: true the default-branch run uploads the
+  # GitHub Pages artifact for the deploy job below; with deploy: false it uploads
+  # a plain `docs` artifact for the caller to compose into its own deploy.
   docs:
-    if: inputs.pages && github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+    if: >-
+      inputs.pages && (
+        (github.event_name == 'push' && github.ref_name == github.event.repository.default_branch)
+        || (github.event_name == 'pull_request' && inputs.docs-on-pr)
+      )
     needs: check
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
+    env:
+      publish: ${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch }}
     steps:
       - uses: WhatisRT/pagda/.github/actions/setup@main
         with:
@@ -67,12 +81,13 @@ jobs:
       # Copy to a repo-root `public` so the upload path is the same regardless
       # of working-directory.
       - name: Prepare the docs
+        if: env.publish == 'true'
         run: cp -rL --no-preserve=mode,ownership result "$GITHUB_WORKSPACE/public"
-      - if: inputs.deploy
+      - if: ${{ env.publish == 'true' && inputs.deploy }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: public
-      - if: ${{ !inputs.deploy }}
+      - if: ${{ env.publish == 'true' && !inputs.deploy }}
         uses: actions/upload-artifact@v4
         with:
           name: docs
