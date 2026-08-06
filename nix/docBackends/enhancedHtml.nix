@@ -9,7 +9,7 @@
 # index.html lists the module pages instead.
 { pkgs, htmlBackend, agdaDocs }:
 
-{ modules ? null, githubUrl ? null, backButtonUrl ? "/", offline ? true, entryModule ? null }:
+{ modules ? null, githubUrl ? null, backButtonUrl ? null, offline ? true, entryModule ? null }:
 
 agdaLib:
 
@@ -36,7 +36,8 @@ let
   mods = if modules == null then autoModules else modules;
 
   config = pkgs.writeText "agda-docs.config.json" (builtins.toJSON (
-    { modules = mods; inherit backButtonUrl; }
+    { modules = mods; }
+    // lib.optionalAttrs (backButtonUrl != null) { inherit backButtonUrl; }
     // lib.optionalAttrs (githubUrl != null) { inherit githubUrl; }
   ));
 
