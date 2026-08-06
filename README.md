@@ -204,7 +204,7 @@ jobs:
     needs: pagda
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with: { name: docs, path: agda-docs }  # where the docs live in your site
       # ... build the rest of your site and deploy it ...
 ```

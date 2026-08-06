@@ -15,8 +15,8 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
-    - uses: DeterminateSystems/nix-installer-action@main
+    - uses: actions/checkout@v7
+    - uses: DeterminateSystems/nix-installer-action@v22
       with:
         extra-conf: |
           keep-outputs = true
