@@ -10,4 +10,5 @@ mkDerivation {
     bar
     baz
   ];
+  passthru = { agdaLibInclude = [ "src" ]; };
 }

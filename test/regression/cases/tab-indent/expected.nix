@@ -8,4 +8,5 @@ mkDerivation {
   buildInputs = [
     standard-library
   ];
+  passthru = { agdaLibInclude = [ "." ]; };
 }

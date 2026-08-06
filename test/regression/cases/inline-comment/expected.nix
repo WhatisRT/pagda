@@ -9,4 +9,5 @@ mkDerivation {
     standard-library
     agda-stdlib-classes
   ];
+  passthru = { agdaLibInclude = [ "src" ]; };
 }

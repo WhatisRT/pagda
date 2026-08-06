@@ -10,4 +10,5 @@ mkDerivation {
     standard-library-classes
     standard-library-meta
   ];
+  passthru = { agdaLibInclude = [ "." ]; };
 }

@@ -15,6 +15,7 @@ type AgdaLibParser = Parsec.Parsec String ()
 data AgdaLib = AgdaLib
   { agdaLibName :: String
   , agdaLibDeps :: [String]
+  , agdaLibInclude :: [String]
   }
 
 parseAgdaLib :: FilePath -> IO AgdaLib
@@ -30,6 +31,7 @@ parseAgdaLibSource = either (Left . show) Right . Parsec.parse agdaLibFile ""
 data AgdaLibField
   = NameField String
   | DependField [String]
+  | IncludeField [String]
   | OtherField
 
 agdaLibFile :: AgdaLibParser AgdaLib
@@ -41,7 +43,11 @@ agdaLibFile = do
                 (n:_) -> n
                 [] -> ""
       deps = concat [d | DependField d <- fields]
-  return $ AgdaLib name deps
+      -- Agda defaults to `.` when no include field is given.
+      include = case concat [i | IncludeField i <- fields] of
+                   [] -> ["."]
+                   xs -> xs
+  return $ AgdaLib name deps include
 
 -- A field starts at the beginning of a line with `key:`; indented lines
 -- continue it. Unknown fields (e.g. `flags:`) are parsed and ignored.
@@ -53,6 +59,7 @@ agdaLibField = do
   return $ case key of
     "name" -> NameField (unwords vals)
     "depend" -> DependField vals
+    "include" -> IncludeField vals
     _ -> OtherField
 
 -- Entries may be separated by whitespace or commas, on the field's own
@@ -100,6 +107,9 @@ agdaLibToNix path lib = unlines $ concat
   , ["  buildInputs = ["]
   , map ((++) "    ") deps
   , ["  ];"]
+  , ["  passthru = { agdaLibInclude = [ "
+      ++ intercalate " " (map (\d -> "\"" ++ d ++ "\"") (agdaLibInclude lib))
+      ++ " ]; };"]
   , ["}"]
   ]
   where

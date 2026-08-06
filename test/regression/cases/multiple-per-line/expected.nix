@@ -11,4 +11,5 @@ mkDerivation {
     agda-stdlib-meta
     agda-stdlib-utils
   ];
+  passthru = { agdaLibInclude = [ "src" "lib" ]; };
 }
