@@ -1,0 +1,31 @@
+--- a/src/indexer.ts
++++ b/src/indexer.ts
+@@ -60,17 +60,19 @@
+             // Add line numbers to code blocks first
+             AgdaDocsIndexer.addLineNumbersToElementsInDocument(document);
+ 
+-            // Look for all elements with an id attribute that is numeric
+-            const elementsWithNumericId = document.querySelectorAll('[id]');
+-            elementsWithNumericId.forEach((element) => {
+-              const id = element.getAttribute('id');
+-              if (id && /^\d+$/.test(id)) {
+-                // Find the line number for this element
+-                const lineNumber = AgdaDocsIndexer.findLineNumberForElement(element);
+-                if (lineNumber) {
++            // Walk the code lines once and collect the numeric-id elements
++            // under each; resolving the line per element instead (closest()
++            // plus a scan of all lines) is quadratic in file size.
++            document.querySelectorAll('pre.Agda .code-line').forEach((lineDiv) => {
++              const lineMatch = /-LC(\d+)$/.exec(lineDiv.id || '');
++              if (!lineMatch) return;
++              const lineNumber = parseInt(lineMatch[1]);
++              lineDiv.querySelectorAll('[id]').forEach((element) => {
++                const id = element.getAttribute('id');
++                if (id && /^\d+$/.test(id)) {
+                   mappings[id] = lineNumber;
+                 }
+-              }
++              });
+             });
+ 
+             // Store mappings for this file

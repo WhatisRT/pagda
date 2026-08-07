@@ -19,6 +19,10 @@ pkgs.buildNpmPackage {
 
   npmDepsHash = "sha256-SObPqlkvsAFfByWj+h8CPfSIBrlGofaObqslGyJtsMM=";
 
+  # The position-mapping scan is quadratic per file (~25x slowdown on large
+  # modules), which dominates the docs build for big projects.
+  patches = [ ./agda-web-docs-lib-linear-position-scan.patch ];
+
   # Patch copyFileSync calls to chmod the destination writable afterwards.
   # Without this, files copied from the nix store inherit read-only permissions
   # and subsequent overwrites fail.
