@@ -22,6 +22,8 @@ runs:
         extra-conf: |
           keep-outputs = true
           keep-derivations = true
+          auto-optimise-store = false
+          # https://github.com/nix-community/cache-nix-action/issues/170
     - if: inputs.cache == 'true'
       name: Cache the Nix store
       uses: nix-community/cache-nix-action@v7
