@@ -7,7 +7,7 @@ module Test where
 # dummy flake for testing
 { }
 === file: nix-args.txt ===
---experimental-features nix-command flakes build path:.#default
+--experimental-features nix-command flakes build path:$TESTDIR#default
 === file: pagda.conf ===
 useUntracked=true;
 warnUntracked=false;

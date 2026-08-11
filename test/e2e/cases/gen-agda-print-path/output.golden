@@ -8,7 +8,7 @@ module Test where
 # dummy flake for testing
 { }
 === file: nix-args.txt ===
---experimental-features nix-command flakes build .#agda --out-link $TESTDIR/.pagda/agda
+--experimental-features nix-command flakes build $TESTDIR#agda --out-link $TESTDIR/.pagda/agda
 === file: pagda.nix ===
 # project root marker used by pagda
 { agdaPackages }: { }

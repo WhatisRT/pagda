@@ -34,7 +34,8 @@ data Config = Config
 -- a git repository this returns nothing rather than failing.
 getUntracked :: IO [String]
 getUntracked = do
-  (code, out, _) <- readProcessWithExitCode "git" ["ls-files", "--others", "--exclude-standard"] ""
+  root <- getProjectRoot
+  (code, out, _) <- readProcessWithExitCode "git" ["-C", root, "ls-files", "--others", "--exclude-standard"] ""
   return $ case code of
     ExitSuccess -> filter (not . null) (lines out)
     ExitFailure _ -> []
@@ -69,6 +70,7 @@ getUseUntracked cfg = case useUntracked cfg of
 
 buildDerivation :: Config -> Maybe String -> IO String
 buildDerivation cfg mderiv = do
+  root <- getProjectRoot
   hasUncommitted <- hasUncommittedFiles
   prefix <-
     if hasUncommitted
@@ -76,7 +78,7 @@ buildDerivation cfg mderiv = do
         useUntrackedFlag <- getUseUntracked cfg
         return $ if useUntrackedFlag then "path:" else ""
       else return ""
-  return $ prefix ++ ".#" ++ maybe "default" id mderiv
+  return $ prefix ++ root ++ "#" ++ maybe "default" id mderiv
 
 runProcess_ :: String -> [String] -> IO ()
 runProcess_ cmd args = rawSystem cmd args >>= \case

@@ -7,4 +7,4 @@ module Test where
 # dummy flake for testing
 { }
 === file: nix-args.txt ===
---experimental-features nix-command flakes build .#default
+--experimental-features nix-command flakes build $TESTDIR#default

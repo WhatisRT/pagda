@@ -7,5 +7,5 @@ module Test where
 # dummy flake for testing
 { }
 === file: nix-args.txt ===
---experimental-features nix-command flakes develop .#default --profile $TESTDIR/.pagda/check-env --command agda --build-library
+--experimental-features nix-command flakes develop $TESTDIR#default --profile $TESTDIR/.pagda/check-env --command agda --build-library
 --experimental-features nix-command flakes profile wipe-history --profile $TESTDIR/.pagda/check-env

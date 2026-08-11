@@ -8,6 +8,7 @@
 --   bin/           (optional) stub executables prepended to $PATH
 --   setup.sh       (optional) shell script run in the work directory before pagda
 --   stdin          (optional) text piped to pagda's stdin
+--   cwd            (optional) subdirectory of the work directory to run pagda in
 --   output.golden  golden rendering of the outcome: exit code, stdout,
 --                  stderr and the complete file tree of the work directory
 --
@@ -30,7 +31,7 @@ import Control.Monad.Extra (ifM)
 import Data.ByteString.Lazy (ByteString, fromStrict)
 import Data.Char (isSpace)
 import Data.List (isInfixOf, isPrefixOf, sort)
-import Data.List.Extra (replace)
+import Data.List.Extra (replace, trim)
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
@@ -101,8 +102,10 @@ runCase pagdaBin agdaCheckBin caseDir name = do
 
   runSetup caseDir workDir env'
   stdinContents <- readFileIfExists (caseDir </> "stdin")
+  cwdRel <- trim <$> readFileIfExists (caseDir </> "cwd")
+  let runDir = if null cwdRel then workDir else workDir </> cwdRel
   (code, out, err) <- readCreateProcessWithExitCode
-    (proc bin cmdArgs) { cwd = Just workDir, env = Just env' }
+    (proc bin cmdArgs) { cwd = Just runDir, env = Just env' }
     stdinContents
   let exitN = case code of
         ExitSuccess -> 0

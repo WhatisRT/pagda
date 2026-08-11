@@ -7,6 +7,6 @@ result
 # dummy flake for testing
 { }
 === file: nix-args.txt ===
---experimental-features nix-command flakes build .#default
+--experimental-features nix-command flakes build $TESTDIR#default
 === file: result ===
 pretend nix build output
