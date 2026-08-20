@@ -237,3 +237,21 @@ are intercepted by a stub that records the arguments, so the tests are
 fast, reproducible and need no network. See
 [test/e2e/README.md](test/e2e/README.md) for how to add cases and
 regenerate goldens (`cabal test e2e --test-options=--accept`).
+
+## Contributing
+
+Contributions are welcome, however please make sure that the
+contribution is of reasonable quality. Adding new features requires
+consideration of how it interacts with the existing features and
+anything that was obviously written by AI will be rejected. AI
+contributions are welcome, but they must clear a higher quality bar
+than human contributions. **If you have access to AI tools, you should
+use them to do better work, not just more work.**
+
+## AI disclaimer
+
+AI tools were used in the development of this project. All code and
+designs were extensively reviewed manually, but while the maintainer
+tries very hard to keep this codebase free from AI slop there is no
+guarantee that there doesn't sit some low quality bit somewhere that
+was missed.
