@@ -49,11 +49,12 @@ agdaLibFile = do
                    xs -> xs
   return $ AgdaLib name deps include
 
--- A field starts at the beginning of a line with `key:`; indented lines
+-- A field starts at the beginning of a line with `key:` (or `key :`); indented lines
 -- continue it. Unknown fields (e.g. `flags:`) are parsed and ignored.
 agdaLibField :: AgdaLibParser AgdaLibField
 agdaLibField = do
   key <- Parsec.many1 (Parsec.alphaNum Parsec.<|> Parsec.oneOf "-_")
+  hspaces
   _ <- Parsec.char ':'
   vals <- fieldValues
   return $ case key of
