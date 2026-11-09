@@ -245,7 +245,8 @@ contribution is of reasonable quality. Adding new features requires
 consideration of how it interacts with the existing features and
 anything that was obviously written by AI will be rejected. AI
 contributions are welcome, but they must clear a higher quality bar
-than human contributions. **If you have access to AI tools, you should
+than human contributions. Additionally, PRs, issues and comments must
+be written by a human. **If you have access to AI tools, you should
 use them to do better work, not just more work.**
 
 ## AI disclaimer
