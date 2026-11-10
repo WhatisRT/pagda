@@ -3,8 +3,8 @@
 module Main (main) where
 
 import Options.Applicative
-import System.Directory (canonicalizePath, createDirectoryIfMissing, doesFileExist, doesPathExist, findExecutable, getHomeDirectory, getCurrentDirectory, getSymbolicLinkTarget, listDirectory, pathIsSymbolicLink, removeFile, removePathForcibly)
-import System.FilePath (takeDirectory, takeExtension, takeFileName, (</>))
+import System.Directory (canonicalizePath, createDirectoryIfMissing, doesFileExist, findExecutable, getHomeDirectory, getCurrentDirectory, getSymbolicLinkTarget, listDirectory, pathIsSymbolicLink, removeFile, removePathForcibly)
+import System.FilePath (isPathSeparator, takeDirectory, takeExtension, takeFileName, (</>))
 import System.IO (hFlush, hPutStrLn, stdout, stderr)
 import System.IO.Error (isUserError, ioeGetErrorString)
 import System.Exit (ExitCode(..), exitFailure)
@@ -223,7 +223,7 @@ onInit mname mroot here existing
       findAgdaLibs root >>= \case
         (lib:_) -> putStrLn $ "Found existing library file " ++ lib ++ "; leaving it untouched."
         [] -> do
-          name <- maybe (promptRequired "Project name") return mname
+          name <- maybe (promptRequired "Project name") return mname >>= validateProjectName
           writeFile (root </> name ++ ".agda-lib") (bareAgdaLib name)
           putStrLn $ "Wrote " ++ name ++ ".agda-lib"
       flakeExists <- doesFileExist (root </> "flake.nix")
@@ -233,12 +233,11 @@ onInit mname mroot here existing
   | otherwise = do
       when (here && isJust mroot) $
         fail "init: PROJECT_ROOT cannot be combined with --here"
-      projectName <- maybe (promptRequired "Project name") return mname
+      projectName <- maybe (promptRequired "Project name") return mname >>= validateProjectName
       projectRoot <- if here
         then getCurrentDirectory
         else maybe (promptDefault "Project root" projectName) return mroot
       createDirectoryIfMissing True projectRoot
-      -- Refuse to scaffold over an existing project
       let isGenerated f = f == "flake.nix" || f == "Test.agda" || takeExtension f == ".agda-lib"
       blockers <- sort . filter isGenerated <$> listDirectory projectRoot
       when (not (null blockers)) $
@@ -248,6 +247,13 @@ onInit mname mroot here existing
       writeFile (projectRoot </> "flake.nix") flakeNix
       writeFile (projectRoot </> projectName ++ ".agda-lib") (subst agdaLib)
       writeFile (projectRoot </> "Test.agda") testAgda
+
+validateProjectName :: String -> IO String
+validateProjectName name
+  | null name || name == "." || name == ".." || '\0' `elem` name
+      || name /= takeFileName name || any isPathSeparator name =
+      fail $ "init: invalid project name " ++ show name ++ ": expected a name, not a path"
+  | otherwise = return name
 
 -- | The .agda-lib files in a directory (non-recursive).
 findAgdaLibs :: FilePath -> IO [FilePath]
