@@ -211,12 +211,17 @@ jobs:
 
 ## Configuration options
 
-There are three ways to set options for Pagda: a global configuration file, a configuration file local to the project and command line options. The syntax for command line options is `--<name> <value>` and the syntax for configuration files is `name=value;`, each on a separate line.
+Pagda reads global options from `$HOME/.config/pagda.conf`, project options from
+`pagda.conf` in the project root, and command-line options written as
+`--<name> <value>`. Configuration files contain one `name=value;` setting per
+line. When the same option is set in multiple places, command-line options take
+precedence over project options, project options take precedence over global
+options, and global options take precedence over the defaults below.
 
 | Name             | Possible values  | Default | Description                                             |
 |------------------|------------------|---------|---------------------------------------------------------|
 | useUntracked     | true, false, ask | ask     | What to do with files that are untracked by git         |
-| useWarnUntracked | true, false      | true    | Print a warning if certain files are not tracked by git |
+| warnUntracked    | true, false      | true    | Print a warning if certain files are not tracked by git |
 
 ## Development
 
