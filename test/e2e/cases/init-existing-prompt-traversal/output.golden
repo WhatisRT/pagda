@@ -1,0 +1,8 @@
+exit code: 1
+=== stdout ===
+Project name: 
+\ no newline at end
+=== stderr ===
+pagda: init: invalid project name "../victim": expected a name, not a path
+=== file: victim-proof ===
+DO NOT OVERWRITE
