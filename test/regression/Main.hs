@@ -20,7 +20,7 @@ import System.Directory (doesDirectoryExist, doesFileExist, listDirectory)
 import System.FilePath ((</>))
 import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.Golden (goldenVsStringDiff)
-import Test.Tasty.HUnit (assertFailure, testCase)
+import Test.Tasty.HUnit (assertEqual, assertFailure, testCase)
 
 casesDir :: FilePath
 casesDir = "test" </> "regression" </> "cases"
@@ -31,7 +31,7 @@ main = do
   setLocaleEncoding utf8
   names <- listDirectory casesDir >>= filterM (doesDirectoryExist . (casesDir </>))
   tests <- mapM caseTest (sort names)
-  defaultMain $ testGroup "agdaLib2nix regression" tests
+  defaultMain $ testGroup "agdaLib2nix regression" (includePathTest : tests)
 
 caseTest :: String -> IO TestTree
 caseTest name = do
@@ -53,6 +53,13 @@ caseTest name = do
       else goldenVsStringDiff name diffCmd goldenPath (renderNix libPath)
   where
     diffCmd ref new = ["diff", "-u", ref, new]
+
+includePathTest :: TestTree
+includePathTest = testCase "escaped include paths parse as Agda does" $
+  case parseAgdaLibSource "include: source\\ files slash\\\\path ${missing}\n" of
+    Left err -> assertFailure $ "parse error:\n" ++ err
+    Right lib -> assertEqual "include paths"
+      ["source files", "slash\\path", "${missing}"] (agdaLibInclude lib)
 
 -- | Parse the .agda-lib file and render its nix derivation, failing the
 -- test if the input does not parse. The path is passed through verbatim
