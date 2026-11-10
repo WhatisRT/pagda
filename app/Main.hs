@@ -3,13 +3,13 @@
 module Main (main) where
 
 import Options.Applicative
-import System.Directory (canonicalizePath, createDirectoryIfMissing, doesFileExist, findExecutable, getHomeDirectory, getCurrentDirectory, listDirectory, removePathForcibly)
+import System.Directory (canonicalizePath, createDirectoryIfMissing, doesFileExist, doesPathExist, findExecutable, getHomeDirectory, getCurrentDirectory, getSymbolicLinkTarget, listDirectory, pathIsSymbolicLink, removeFile, removePathForcibly)
 import System.FilePath (takeDirectory, takeExtension, takeFileName, (</>))
 import System.IO (hFlush, hPutStrLn, stdout, stderr)
 import System.IO.Error (isUserError, ioeGetErrorString)
 import System.Exit (ExitCode(..), exitFailure)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
-import Control.Monad (when)
+import Control.Monad (filterM, when)
 import Data.List (intercalate, isPrefixOf, sort)
 import Data.Maybe (isJust)
 import Data.Version (showVersion)
@@ -303,14 +303,30 @@ onClean :: IO ()
 onClean = do
   root <- getProjectRoot
   entries <- listDirectory root
-  let isArtifact f =
-        f `elem` ["_build", ".pagda", "result"] || "result-" `isPrefixOf` f
-      artifacts = sort (filter isArtifact entries)
+  outputLinks <- filterM (isNixOutputLink root) entries
+  let internalArtifacts = filter (`elem` ["_build", ".pagda"]) entries
+      artifacts = sort (internalArtifacts ++ outputLinks)
   if null artifacts
     then putStrLn "Nothing to clean."
     else mapM_
-      (\f -> removePathForcibly (root </> f) >> putStrLn ("Removed " ++ f))
+      (\f -> removeArtifact root f >> putStrLn ("Removed " ++ f))
       artifacts
+  where
+    removeArtifact root f
+      | f `elem` ["_build", ".pagda"] = removePathForcibly (root </> f)
+      | otherwise = removeFile (root </> f)
+
+isNixOutputLink :: FilePath -> FilePath -> IO Bool
+isNixOutputLink root name
+  | name /= "result" && not ("result-" `isPrefixOf` name) = return False
+  | otherwise = do
+      let path = root </> name
+      isLink <- pathIsSymbolicLink path
+      if not isLink
+        then return False
+        else do
+          target <- getSymbolicLinkTarget path
+          return ("/nix/store/" `isPrefixOf` target)
 
 -- | Write a GitHub Actions CI workflow to the project.
 onGenCi :: Bool -> Bool -> IO ()

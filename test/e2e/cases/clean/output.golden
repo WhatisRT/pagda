@@ -2,11 +2,29 @@ exit code: 0
 === stdout ===
 Removed .pagda
 Removed _build
-Removed result
+Removed result-dangling
 Removed result-docs
+Removed result-nested
 === stderr ===
 === file: Test.agda ===
 module Test where
 === file: flake.nix ===
 # dummy flake for testing
 { }
+=== file: nested/keep.txt ===
+nested-keep
+\ no newline at end
+=== file: nix-target-survives ===
+Unnamed repository; edit this file 'description' to name the repository.
+=== file: result ===
+ordinary-result
+\ no newline at end
+=== file: result-analysis/valuable.txt ===
+valuable
+\ no newline at end
+=== file: result-unrelated ===
+linked-target
+\ no newline at end
+=== file: valuable.txt ===
+linked-target
+\ no newline at end
