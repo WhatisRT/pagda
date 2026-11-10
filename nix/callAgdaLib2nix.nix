@@ -42,8 +42,8 @@ let
   # `pagda agdaLib2nix` prints a callPackage-style function
   # `{ mkDerivation, <deps...> }: mkDerivation { ... }`, so callPackageWith
   # supplies mkDerivation and each dependency from agdaPackages by name.
-  generated = runCommand "${libFile}.nix" { } ''
-    ${lib.getExe pagda} agdaLib2nix ${src + "/${libFile}"} > "$out"
+  generated = runCommand "agda-lib.nix" { } ''
+    ${lib.getExe pagda} agdaLib2nix ${lib.escapeShellArg "${src}/${libFile}"} > "$out"
   '';
   # pagda.nix may supply an overlay to pin or add dependencies; anything it
   # doesn't touch stays as agdaPackages provides.
