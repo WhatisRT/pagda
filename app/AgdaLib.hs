@@ -5,8 +5,8 @@ module AgdaLib
   , agdaLibToNix
   ) where
 
-import Data.Char (isDigit)
-import Data.List (intercalate, nub)
+import Data.Char (isDigit, isSpace)
+import Data.List (dropWhileEnd, intercalate, nub)
 import System.FilePath (takeBaseName, takeDirectory, takeFileName)
 import qualified Text.Parsec as Parsec
 
@@ -56,23 +56,36 @@ agdaLibField = do
   key <- Parsec.many1 (Parsec.alphaNum Parsec.<|> Parsec.oneOf "-_")
   hspaces
   _ <- Parsec.char ':'
-  vals <- fieldValues
+  vals <- fieldValueLines
   return $ case key of
-    "name" -> NameField (unwords vals)
-    "depend" -> DependField vals
-    "include" -> IncludeField vals
+    "name" -> NameField (unwords (concatMap entries vals))
+    "depend" -> DependField (concatMap entries vals)
+    "include" -> IncludeField (concatMap includePaths vals)
     _ -> OtherField
+  where
+    entries = words . map (\c -> if c == ',' then ' ' else c) . stripComment
 
--- Entries may be separated by whitespace or commas, on the field's own
--- line or on indented continuation lines.
-fieldValues :: AgdaLibParser [String]
-fieldValues = do
+-- Values may continue on indented lines, including across blank and comment lines.
+fieldValueLines :: AgdaLibParser [String]
+fieldValueLines = do
+  hspaces
   first <- restOfLine
   rest <- Parsec.many (Parsec.try (skipBlankLines *> continuationLine))
-  return $ concatMap entries (first : rest)
+  return (first : rest)
   where
     continuationLine = Parsec.many1 (Parsec.oneOf " \t") *> restOfLine
-    entries = words . map (\c -> if c == ',' then ' ' else c) . stripComment
+
+-- Agda include paths use backslash to escape spaces and backslashes. Dependency
+-- fields deliberately keep their separate comma/whitespace syntax.
+includePaths :: String -> [FilePath]
+includePaths = go id . dropWhileEnd isSpace . stripComment
+  where
+    finish acc = [path | let path = acc [], not (null path)]
+    go acc [] = finish acc
+    go acc ('\\':' ':cs) = go (acc . (' ':)) cs
+    go acc ('\\':'\\':cs) = go (acc . ('\\':)) cs
+    go acc (' ':cs) = finish acc ++ go id cs
+    go acc (c:cs) = go (acc . (c:)) cs
 
 restOfLine :: AgdaLibParser String
 restOfLine = Parsec.many (Parsec.noneOf "\n") <* eolOrEof
@@ -105,16 +118,16 @@ agdaLibToNix :: FilePath -> AgdaLib -> String
 agdaLibToNix path lib = unlines $ concat
   [ ["{ " ++ intercalate ", " ("mkDerivation" : deps) ++ " }:"]
   , ["mkDerivation {"]
-  , ["  pname = \"" ++ pname ++ "\";"]
+  , ["  pname = " ++ nixString pname ++ ";"]
   , ["  version = \"0.1\";"]
   , ["  src = ./.;"]
   , ["  meta = { };"]
-  , ["  libraryFile = \"" ++ takeFileName path ++ "\";"]
+  , ["  libraryFile = " ++ nixString (takeFileName path) ++ ";"]
   , ["  buildInputs = ["]
   , map ((++) "    ") deps
   , ["  ];"]
   , ["  passthru = { agdaLibInclude = [ "
-      ++ intercalate " " (map (\d -> "\"" ++ d ++ "\"") (agdaLibInclude lib))
+      ++ intercalate " " (map nixString (agdaLibInclude lib))
       ++ " ]; };"]
   , ["}"]
   ]
@@ -126,6 +139,18 @@ agdaLibToNix path lib = unlines $ concat
       (n@(_:_), _) -> n
       ("", b@(_:_)) -> b
       _ -> takeFileName (takeDirectory path)
+
+nixString :: String -> String
+nixString value = '"' : escape value ++ "\""
+  where
+    escape ('"':cs) = '\\' : '"' : escape cs
+    escape ('\\':cs) = '\\' : '\\' : escape cs
+    escape ('$':'{':cs) = '\\' : '$' : '{' : escape cs
+    escape ('\n':cs) = '\\' : 'n' : escape cs
+    escape ('\r':cs) = '\\' : 'r' : escape cs
+    escape ('\t':cs) = '\\' : 't' : escape cs
+    escape (c:cs) = c : escape cs
+    escape [] = []
 
 -- Agda library names may end in a version number (e.g. standard-library-2.3),
 -- but nix attributes in agdaPackages are unversioned.
