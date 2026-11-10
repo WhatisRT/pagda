@@ -1,0 +1,9 @@
+name: continued
+depend:
+  standard-library
+
+-- explanatory comment
+  standard-library-meta
+include: src
+  
+-- trailing comment

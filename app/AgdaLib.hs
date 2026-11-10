@@ -68,7 +68,7 @@ agdaLibField = do
 fieldValues :: AgdaLibParser [String]
 fieldValues = do
   first <- restOfLine
-  rest <- Parsec.many (Parsec.try continuationLine)
+  rest <- Parsec.many (Parsec.try (skipBlankLines *> continuationLine))
   return $ concatMap entries (first : rest)
   where
     continuationLine = Parsec.many1 (Parsec.oneOf " \t") *> restOfLine
@@ -80,9 +80,14 @@ restOfLine = Parsec.many (Parsec.noneOf "\n") <* eolOrEof
     eolOrEof = (Parsec.newline >> return ()) Parsec.<|> Parsec.eof
 
 skipBlankLines :: AgdaLibParser ()
-skipBlankLines = Parsec.skipMany (Parsec.try blankLine)
+skipBlankLines =
+  Parsec.skipMany (Parsec.try blankLine)
+    *> Parsec.optional (Parsec.try finalBlankLine)
   where
     blankLine = hspaces *> Parsec.optional comment *> (Parsec.newline >> return ())
+    finalBlankLine =
+      (Parsec.many1 (Parsec.oneOf " \t") *> Parsec.optional comment *> Parsec.eof)
+        Parsec.<|> (comment *> Parsec.eof)
 
 hspaces :: AgdaLibParser ()
 hspaces = Parsec.skipMany (Parsec.oneOf " \t")
