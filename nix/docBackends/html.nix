@@ -64,8 +64,12 @@ agdaLib.overrideAttrs (old: {
       rm -f "$agg" "$out/PagdaDocsEverything.html"
     fi
     if [ -z "$aggOk" ]; then
-      agdaFiles . -print0 | while IFS= read -r -d "" f; do
-        agda --html --html-dir="$out" --html-highlight=auto --highlight-occurrences "$f"
+      for d in ${lib.escapeShellArgs includeDirs}; do
+        if [ -d "$d" ]; then
+          agdaFiles "$d" -print0 | while IFS= read -r -d "" f; do
+            agda --html --html-dir="$out" --html-highlight=auto --highlight-occurrences "$f"
+          done
+        fi
       done
     fi
     # Literate Markdown modules come out as .md (agda highlights the code and
