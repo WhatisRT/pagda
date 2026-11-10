@@ -1,0 +1,11 @@
+-- leading comment
+name: demo
+
+depend:
+  alpha
+-- comment between continuation lines
+  beta
+
+include: src
+  test\ files
+-- final comment

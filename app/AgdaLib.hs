@@ -88,25 +88,30 @@ includePaths = go id . dropWhileEnd isSpace . stripComment
     go acc (c:cs) = go (acc . (c:)) cs
 
 restOfLine :: AgdaLibParser String
-restOfLine = Parsec.many (Parsec.noneOf "\n") <* eolOrEof
+restOfLine = Parsec.many (Parsec.noneOf "\r\n") <* eolOrEof
   where
-    eolOrEof = (Parsec.newline >> return ()) Parsec.<|> Parsec.eof
+    eolOrEof = lineEnd Parsec.<|> Parsec.eof
 
 skipBlankLines :: AgdaLibParser ()
 skipBlankLines =
   Parsec.skipMany (Parsec.try blankLine)
     *> Parsec.optional (Parsec.try finalBlankLine)
   where
-    blankLine = hspaces *> Parsec.optional comment *> (Parsec.newline >> return ())
+    blankLine = hspaces *> Parsec.optional comment *> lineEnd
     finalBlankLine =
       (Parsec.many1 (Parsec.oneOf " \t") *> Parsec.optional comment *> Parsec.eof)
         Parsec.<|> (comment *> Parsec.eof)
+
+lineEnd :: AgdaLibParser ()
+lineEnd =
+  (Parsec.try (Parsec.string "\r\n") >> return ())
+    Parsec.<|> (Parsec.newline >> return ())
 
 hspaces :: AgdaLibParser ()
 hspaces = Parsec.skipMany (Parsec.oneOf " \t")
 
 comment :: AgdaLibParser ()
-comment = Parsec.string "--" *> Parsec.skipMany (Parsec.noneOf "\n")
+comment = Parsec.string "--" *> Parsec.skipMany (Parsec.noneOf "\r\n")
 
 stripComment :: String -> String
 stripComment ('-':'-':_) = ""
