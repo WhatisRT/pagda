@@ -9,7 +9,7 @@ manifest.
 
 ## Running
 
-Via nix (also runs as part of `nix build` / `nix flake check`):
+Via Nix (`nix build` builds the executable without running tests):
 
 ```
 nix flake check

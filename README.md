@@ -42,9 +42,12 @@ To pull pagda into a flake / NixOS / home-manager configuration, add it as an in
 To scaffold a fresh project:
 
 ```
-pagda init myproject         # in ./myproject
-pagda init myproject --here  # in the current directory
+pagda init myproject myproject  # in ./myproject, without prompts
+pagda init myproject --here     # in the current directory
 ```
+
+With only `pagda init myproject`, Pagda prompts for the project root; press
+Enter to accept `./myproject`.
 
 This refuses to run if the target directory already contains a `flake.nix`,
 a `.agda-lib`, or a `Test.agda`, so it never clobbers existing work.
@@ -58,6 +61,19 @@ pagda init --existing
 This writes `flake.nix` and reuses the project's existing `.agda-lib`.
 It never overwrites existing files, so it is safe to run in a populated
 repository.
+
+To check the whole library or a single module:
+
+```
+pagda check
+pagda check src/MyModule.agda
+```
+
+Put `--` before Agda runtime options so Pagda's own runtime does not consume them:
+
+```
+pagda check src/MyModule.agda -- +RTS -M3G -H1G -RTS
+```
 
 ## Customizing the build via `pagda.nix`
 
@@ -193,7 +209,10 @@ The workflow supports a couple of options:
 | `gc-max-store-size` | `1G` | Trim the Nix store to this size before caching. |
 
 To fold the docs into an **existing** Pages site instead of deploying them
-standalone, use `deploy: false` and consume the `docs` artifact yourself:
+standalone, use `deploy: false` and consume the `docs` artifact yourself.
+
+The artifact is uploaded only on default-branch pushes, so the consuming job
+must use the same condition:
 
 ```yaml
 jobs:
@@ -202,6 +221,7 @@ jobs:
     with: { pages: true, deploy: false }
   publish:
     needs: pagda
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8
