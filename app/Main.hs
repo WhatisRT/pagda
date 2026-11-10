@@ -399,7 +399,7 @@ runPagda = do
     _ -> do
       hasNixFlag <- hasNix
       if not hasNixFlag
-        then putStrLn "Nix not found. Please install Nix before proceeding."
+        then hPutStrLn stderr "Nix not found. Please install Nix before proceeding." >> exitFailure
         else do
           cfg' <- adjustConfig cfg
           when (warnUntracked cfg' && not (quiet cfg')) warnAboutUntrackedFiles
