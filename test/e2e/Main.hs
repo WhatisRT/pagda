@@ -54,8 +54,9 @@ main = do
   agdaCheckBin <- findAgdaCheck
   names <- listDirectory casesDir
     >>= filterM (\n -> doesDirectoryExist (casesDir </> n))
-  defaultMain $ testGroup "pagda e2e"
-    [caseTest pagdaBin agdaCheckBin (casesDir </> name) name | name <- sort names]
+  defaultMain $ testGroup "pagda e2e" $
+    missingNixTest pagdaBin casesDir
+    : [caseTest pagdaBin agdaCheckBin (casesDir </> name) name | name <- sort names]
 
 findPagda :: IO FilePath
 findPagda = lookupEnv "PAGDA_BIN" >>= \mbin -> case mbin of
@@ -74,6 +75,30 @@ caseTest :: FilePath -> Maybe FilePath -> FilePath -> String -> TestTree
 caseTest pagdaBin agdaCheckBin caseDir name =
   goldenVsStringDiff name diffCmd (caseDir </> "output.golden")
     (runCase pagdaBin agdaCheckBin caseDir name)
+  where
+    diffCmd ref new = ["diff", "-u", ref, new]
+
+missingNixTest :: FilePath -> FilePath -> TestTree
+missingNixTest pagdaBin casesDir =
+  goldenVsStringDiff "build-missing-nix" diffCmd
+    (takeDirectory casesDir </> "build-missing-nix.golden") $ do
+      tmp <- getTemporaryDirectory
+      let sandbox = tmp </> "pagda-e2e" </> "build-missing-nix"
+          workDir = sandbox </> "work"
+          homeDir = sandbox </> "home"
+      removePathForcibly sandbox
+      createDirectoryIfMissing True workDir
+      createDirectoryIfMissing True homeDir
+      env' <- caseEnvironment (takeDirectory casesDir) homeDir
+      let noNixEnv = ("PATH", "") : filter ((/= "PATH") . fst) env'
+      (code, out, err) <- readCreateProcessWithExitCode
+        (proc pagdaBin ["build"]) { cwd = Just workDir, env = Just noNixEnv }
+        ""
+      let exitN = case code of
+            ExitSuccess -> 0
+            ExitFailure n -> n
+      return $ fromStrict $ encodeUtf8 $ T.pack $
+        render exitN out (stripBacktrace err) []
   where
     diffCmd ref new = ["diff", "-u", ref, new]
 
