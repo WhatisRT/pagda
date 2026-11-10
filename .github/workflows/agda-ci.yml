@@ -78,20 +78,24 @@ jobs:
           gc-max-store-size: ${{ inputs.gc-max-store-size }}
       - name: Build the documentation
         run: nix build .#docs -L
-      # Copy to a repo-root `public` so the upload path is the same regardless
-      # of working-directory.
+      # Stage in runner temp so the upload cannot include an existing repository
+      # `public` directory and remains independent of working-directory.
       - name: Prepare the docs
+        id: docs
         if: env.publish == 'true'
-        run: cp -rL --no-preserve=mode,ownership result "$GITHUB_WORKSPACE/public"
+        run: |
+          docs_dir="$(mktemp -d -- "$RUNNER_TEMP/pagda-docs.XXXXXX")"
+          cp -rL --no-preserve=mode,ownership -- result/. "$docs_dir/"
+          printf 'path=%s\n' "$docs_dir" >> "$GITHUB_OUTPUT"
       - if: ${{ env.publish == 'true' && inputs.deploy }}
         uses: actions/upload-pages-artifact@v5
         with:
-          path: public
+          path: ${{ steps.docs.outputs.path }}
       - if: ${{ env.publish == 'true' && !inputs.deploy }}
         uses: actions/upload-artifact@v7
         with:
           name: docs
-          path: public
+          path: ${{ steps.docs.outputs.path }}
 
   deploy:
     if: inputs.pages && inputs.deploy && github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
