@@ -8,15 +8,18 @@ module ([`Demo.lagda.md`](./Demo.lagda.md)) that embeds a diagram
 
 ## Build the docs
 
+Run these commands from `examples/docs-assets`:
+
 ```
 nix build .#docs
 xdg-open result/Demo.html   # the literate page, with the diagram rendered
 ```
 
 This pulls `pagda` from `github:WhatisRT/pagda`. To build against **this
-checkout** (e.g. to test unreleased changes), from within the pagda repo:
+checkout** (e.g. to test unreleased changes), starting at the repository root:
 
 ```
+cd examples/docs-assets
 nix build .#docs --override-input pagda ../..
 ```
 
