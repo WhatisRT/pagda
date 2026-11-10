@@ -1,5 +1,7 @@
 exit code: 0
 === stdout ===
+The following files which are recommended to be part of your repository are untracked:
+  flake.nix
 === stderr ===
 === file: Test.agda ===
 module Test where
@@ -7,7 +9,10 @@ module Test where
 # dummy flake for testing
 { }
 === file: nix-args.txt ===
---experimental-features nix-command flakes build path:$TESTDIR#default
+--experimental-features nix-command flakes build $TESTDIR#default
+=== file: pagda.conf ===
+useUntracked=true;
+warnUntracked=false;
 === file: pagda.nix ===
 # project root marker used by pagda
 { agdaPackages }: { }

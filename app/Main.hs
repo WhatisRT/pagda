@@ -9,9 +9,10 @@ import System.IO (hFlush, hPutStrLn, stdout, stderr)
 import System.IO.Error (isUserError, ioeGetErrorString)
 import System.Exit (ExitCode(..), exitFailure)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
+import Control.Applicative ((<|>))
 import Control.Monad (filterM, when)
 import Data.List (intercalate, isPrefixOf, sort)
-import Data.Maybe (isJust)
+import Data.Maybe (fromMaybe, isJust)
 import Data.Version (showVersion)
 import Paths_pagda (version)
 import Data.HashMap.Strict (HashMap)
@@ -23,6 +24,12 @@ import Templates
 import Pagda
   ( UseUntracked(..), Config(..), getProjectRoot, getUntracked
   , buildDerivation, runProcess_, nixFlags, genAgda )
+
+data CliConfig = CliConfig
+  { cliUseUntracked :: Maybe UseUntracked
+  , cliWarnUntracked :: Maybe Bool
+  , cliQuiet :: Bool
+  }
 
 data PagdaOpts
   = Init (Maybe String) (Maybe FilePath) Bool Bool
@@ -38,8 +45,8 @@ data PagdaOpts
   | Debug
   deriving Show
 
-pagdaParser :: Parser Config -> Parser PagdaOpts
-pagdaParser cfg = subparser
+pagdaParser :: Parser PagdaOpts
+pagdaParser = subparser
   ( command "init" (info (initCmd <**> helper)
       (progDesc "Initialize a project (use --existing to add pagda to an existing one)"))
   <> command "build" (info (Build <$> buildArg <**> helper)
@@ -81,9 +88,9 @@ pagdaParser cfg = subparser
     checkArgs = many (strArgument (metavar "[AGDA_ARG...]"
         <> help "File to check and/or flags to pass to agda"))
 
-parserInfo :: ParserInfo (Config, PagdaOpts)
+parserInfo :: ParserInfo (CliConfig, PagdaOpts)
 parserInfo = info
-  ( (,) <$> configParser <*> pagdaParser configParser
+  ( (,) <$> configParser <*> pagdaParser
     <**> simpleVersioner ("pagda " ++ showVersion version) <**> helper )
   $ fullDesc <> progDesc "Pagda - Agda project build tool using Nix"
 
@@ -100,21 +107,21 @@ parseBool v = case v of
   "false" -> Just False
   _ -> Nothing
 
-configParser :: Parser Config
-configParser = Config
-  <$> option (maybeReader parseUseUntracked)
+configParser :: Parser CliConfig
+configParser = CliConfig
+  <$> option (Just <$> maybeReader parseUseUntracked)
       ( long "useUntracked"
       <> metavar "true|false|ask"
       <> help "What to do with untracked files"
-      <> value UseUntrackedAsk
-      <> showDefaultWith (\_ -> "ask")
+      <> value Nothing
+      <> showDefaultWith (const "ask")
       )
-  <*> option (maybeReader parseBool)
+  <*> option (Just <$> maybeReader parseBool)
       ( long "warnUntracked"
       <> metavar "true|false"
       <> help "Warn if recommended files are untracked"
-      <> value True
-      <> showDefault
+      <> value Nothing
+      <> showDefaultWith (const "true")
       )
   <*> switch
       ( long "quiet"
@@ -153,26 +160,25 @@ parseConfig path = do
     guard True = Just ()
     guard False = Nothing
 
-adjustConfig :: Config -> IO Config
-adjustConfig cfg = do
+adjustConfig :: CliConfig -> IO Config
+adjustConfig cli = do
   root <- getProjectRoot
   home <- getHomeDir
-
   globalConfig <- parseConfig (home </> ".config" </> "pagda.conf")
-  let cfg' = applyConfig globalConfig cfg
-
   projectConfig <- parseConfig (root </> "pagda.conf")
-  let cfg'' = applyConfig projectConfig cfg'
-
-  return cfg''
-  where
-    applyConfig :: HashMap String String -> Config -> Config
-    applyConfig m c = c
-      { useUntracked = maybe (useUntracked c) id $
-          parseUseUntracked =<< HM.lookup "useUntracked" m
-      , warnUntracked = maybe (warnUntracked c) id $
-          parseBool =<< HM.lookup "warnUntracked" m
-      }
+  return Config
+    { useUntracked = fromMaybe UseUntrackedAsk
+        ( cliUseUntracked cli
+        <|> (parseUseUntracked =<< HM.lookup "useUntracked" projectConfig)
+        <|> (parseUseUntracked =<< HM.lookup "useUntracked" globalConfig)
+        )
+    , warnUntracked = fromMaybe True
+        ( cliWarnUntracked cli
+        <|> (parseBool =<< HM.lookup "warnUntracked" projectConfig)
+        <|> (parseBool =<< HM.lookup "warnUntracked" globalConfig)
+        )
+    , quiet = cliQuiet cli
+    }
 
 getHomeDir :: IO FilePath
 getHomeDir = getHomeDirectory
