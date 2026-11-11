@@ -22,11 +22,14 @@ executable pagda
                     , directory
                     , process
                     , unordered-containers
+                    , aeson >=2.2
+                    , text
 
     default-language: GHC2021
     other-modules:    AgdaLib
                     , Templates
                     , Pagda
+                    , Update
                     , Paths_pagda
     autogen-modules:  Paths_pagda
 
@@ -51,6 +54,7 @@ test-suite e2e
     main-is:            Main.hs
     hs-source-dirs:     test/e2e
     other-modules:      InitTests
+                      , UpdateTests
     build-depends:      base >=4.18 && <5
                       , bytestring
                       , directory

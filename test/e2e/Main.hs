@@ -44,6 +44,7 @@ import System.IO (readFile')
 import System.Process (CreateProcess (..), proc, readCreateProcessWithExitCode)
 import Test.Tasty (TestTree, defaultMain, testGroup)
 import Test.Tasty.Golden (goldenVsStringDiff)
+import UpdateTests (updateTests)
 import InitTests (initTests)
 
 main :: IO ()
@@ -56,7 +57,7 @@ main = do
   names <- listDirectory casesDir
     >>= filterM (\n -> doesDirectoryExist (casesDir </> n))
   defaultMain $ testGroup "pagda e2e" $
-    initTests pagdaBin : missingNixTest pagdaBin casesDir
+    initTests pagdaBin : updateTests pagdaBin : missingNixTest pagdaBin casesDir
     : [caseTest pagdaBin agdaCheckBin (casesDir </> name) name | name <- sort names]
 
 findPagda :: IO FilePath
