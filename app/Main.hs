@@ -214,12 +214,20 @@ promptDefault label def = do
   answer <- getLine
   return $ if null answer then def else answer
 
+lockFlake :: FilePath -> IO ()
+lockFlake root = do
+  canonicalRoot <- canonicalizePath root
+  runProcess_ "nix"
+    [ "--experimental-features", "nix-command flakes"
+    , "flake", "lock", "path:" ++ canonicalRoot
+    ]
+
 -- | Initialize a project. By default this scaffolds a fresh project
--- (a new directory, or the current one with --here) with flake.nix, a
--- .agda-lib and a sample module; missing name/root are prompted
+-- (a new directory, or the current one with --here) with flake.nix,
+-- flake.lock, a .agda-lib and a sample module; missing name/root are prompted
 -- for. With --existing it instead adds pagda to an existing project
--- in the current directory. In this mode existing files are never
--- overwritten and no sample module is added.
+-- in the current directory. In this mode flake.nix and library files are
+-- never overwritten and no sample module is added.
 onInit :: Maybe String -> Maybe FilePath -> Bool -> Bool -> IO ()
 onInit mname mroot here existing
   | existing = do
@@ -236,6 +244,7 @@ onInit mname mroot here existing
       if flakeExists
         then putStrLn "flake.nix already exists; leaving it untouched (run `pagda regenerate` to update it)."
         else writeFile (root </> "flake.nix") flakeNix >> putStrLn "Wrote flake.nix"
+      lockFlake root
   | otherwise = do
       when (here && isJust mroot) $
         fail "init: PROJECT_ROOT cannot be combined with --here"
@@ -244,7 +253,8 @@ onInit mname mroot here existing
         then getCurrentDirectory
         else maybe (promptDefault "Project root" projectName) return mroot
       createDirectoryIfMissing True projectRoot
-      let isGenerated f = f == "flake.nix" || f == "Test.agda" || takeExtension f == ".agda-lib"
+      let isGenerated f = f == "flake.nix" || f == "flake.lock"
+                       || f == "Test.agda" || takeExtension f == ".agda-lib"
       blockers <- sort . filter isGenerated <$> listDirectory projectRoot
       when (not (null blockers)) $
         fail $ "init: " ++ projectRoot ++ " already contains " ++ intercalate ", " blockers
@@ -253,6 +263,7 @@ onInit mname mroot here existing
       writeFile (projectRoot </> "flake.nix") flakeNix
       writeFile (projectRoot </> projectName ++ ".agda-lib") (subst agdaLib)
       writeFile (projectRoot </> "Test.agda") testAgda
+      lockFlake projectRoot
 
 validateProjectName :: String -> IO String
 validateProjectName name
@@ -384,8 +395,6 @@ runPagda = do
   (cfg, opts) <- customExecParser (prefs showHelpOnEmpty) parserInfo
 
   case opts of
-    Init name root here existing -> onInit name root here existing
-
     AgdaLib2Nix path -> onAgdaLib2Nix path
 
     Regenerate -> onRegenerate
@@ -400,13 +409,15 @@ runPagda = do
       hasNixFlag <- hasNix
       if not hasNixFlag
         then hPutStrLn stderr "Nix not found. Please install Nix before proceeding." >> exitFailure
-        else do
-          cfg' <- adjustConfig cfg
-          when (warnUntracked cfg' && not (quiet cfg')) warnAboutUntrackedFiles
+        else case opts of
+          Init name root here existing -> onInit name root here existing
+          _ -> do
+            cfg' <- adjustConfig cfg
+            when (warnUntracked cfg' && not (quiet cfg')) warnAboutUntrackedFiles
 
-          case opts of
-            Build mderiv -> runNix "build" mderiv cfg'
-            GenAgda printPath -> onGenAgda cfg' printPath
-            Shell mderiv -> runNix "develop" mderiv cfg'
-            Check agdaArgs -> onCheck cfg' agdaArgs
-            Doc -> runNix "build" (Just "docs") cfg'
+            case opts of
+              Build mderiv -> runNix "build" mderiv cfg'
+              GenAgda printPath -> onGenAgda cfg' printPath
+              Shell mderiv -> runNix "develop" mderiv cfg'
+              Check agdaArgs -> onCheck cfg' agdaArgs
+              Doc -> runNix "build" (Just "docs") cfg'

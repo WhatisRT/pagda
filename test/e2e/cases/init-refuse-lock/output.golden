@@ -1,0 +1,6 @@
+exit code: 1
+=== stdout ===
+=== stderr ===
+pagda: init: $TESTDIR already contains flake.lock; refusing to overwrite. To add pagda to an existing project, run `pagda init --existing`.
+=== file: flake.lock ===
+DO NOT OVERWRITE
