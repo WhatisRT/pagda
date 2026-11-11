@@ -1,12 +1,11 @@
 # Pagda, a package manager for Agda
 
 Pagda is a package manager built on top of [agda.nix](https://github.com/input-output-hk/agda.nix). This means it inherits the nice features of nix, such as:
-- Reproducable builds
+- Reproducible builds
 - Caching
 - Parallel builds
-- etc.
 
-Pagda is also completely compatible with the built-in package management functionality of Agda, so you can add it to existing code bases without breaking the workflow of users that don't use Pagda.
+Pagda uses standard `.agda-lib` files, so projects can continue to support users who manage their Agda dependencies without Pagda.
 
 To see the list of supported commands, run `pagda --help`.
 
@@ -58,9 +57,11 @@ To add pagda to an **existing** Agda project, run this in its directory:
 pagda init --existing
 ```
 
-This writes `flake.nix` and reuses the project's existing `.agda-lib`.
-It never overwrites existing files, so it is safe to run in a populated
-repository.
+This writes `flake.nix` if it doesn't exist and reuses the project's existing
+`.agda-lib`. If there is no `.agda-lib`, it prompts for a project name and creates
+a minimal library file with `include: .` and no dependencies. You can supply the
+name without prompting with `pagda init myproject --existing`; fill in the
+library's dependencies before building.
 
 To check the whole library or a single module:
 
@@ -79,11 +80,12 @@ pagda check src/MyModule.agda -- +RTS -M3G -H1G -RTS
 
 The `.agda-lib` file governs the library name and its dependencies, and
 those dependencies resolve by name against whatever `agdaPackages`
-provides (pinned, along with the rest of nixpkgs and agda.nix, by your
-`flake.lock`). For anything beyond that, add an optional `pagda.nix`
-next to it. It is a function of `{ pkgs, pagda }` returning an attribute
-set with these optional fields (`pagda` is pagda's per-system lib, also
-carrying this project's `default` and `agda` packages):
+provides.
+
+For customization beyond the `.agda-lib`, add an optional `pagda.nix` next to it.
+It is a function of `{ pkgs, pagda }` returning an attribute set with these
+optional fields (`pagda` is pagda's per-system lib, also carrying this project's
+`default` and `agda` packages):
 
 - `overlay` — an overlay applied to `agdaPackages`, to **pin** a
   dependency to a particular version/source or to **add** one that
@@ -193,7 +195,7 @@ Pass `--pages` to also build the docs and deploy them to GitHub Pages on the
 default branch (set the repository's Pages source to "GitHub Actions").
 
 Pass `--cache` to cache the Nix store via the GitHub Actions cache, so
-reruns don't rebuild pagda/Agda from source.
+reruns can reuse a cached Agda/dependencies.
 
 ### Reusable workflow inputs
 
