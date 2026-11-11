@@ -31,7 +31,8 @@ runs:
         primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
         restore-prefixes-first-match: nix-${{ runner.os }}-
         gc-max-store-size-linux: ${{ inputs.gc-max-store-size }}
-        purge: true
+        # Purging requires write access unavailable to fork PR tokens.
+        purge: ${{ github.event_name == 'push' }}
         purge-prefixes: nix-${{ runner.os }}-
         purge-created: 0
         purge-last-accessed: P1DT12H

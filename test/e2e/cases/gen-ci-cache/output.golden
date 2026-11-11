@@ -9,6 +9,9 @@ on: [push, pull_request]
 
 jobs:
   pagda:
+    permissions:
+      contents: read
+      actions: write
     uses: WhatisRT/pagda/.github/workflows/agda-ci.yml@v1.0.0
     with:
       cache: true

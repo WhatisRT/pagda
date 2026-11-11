@@ -1,0 +1,23 @@
+exit code: 0
+=== stdout ===
+Wrote $TESTDIR/.github/workflows/ci.yml
+=== stderr ===
+=== file: .github/workflows/ci.yml ===
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  pagda:
+    permissions:
+      contents: read
+      actions: write
+      pages: write
+      id-token: write
+    uses: WhatisRT/pagda/.github/workflows/agda-ci.yml@v1.0.0
+    with:
+      pages: true
+      cache: true
+=== file: flake.nix ===
+# project root marker
+{ }
