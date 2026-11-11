@@ -163,7 +163,16 @@ render exitN out err files = unlines . concat $
 caseEnvironment :: FilePath -> FilePath -> IO [(String, String)]
 caseEnvironment caseDir homeDir = do
   extraPath <- ifM (doesDirectoryExist (caseDir </> "bin"))
-    ((: []) <$> canonicalizePath (caseDir </> "bin"))
+    (do
+      -- Cabal source archives strip executable bits from extra-source-files.
+      let binDir = takeDirectory homeDir </> "bin"
+      copyTree (caseDir </> "bin") binDir
+      names <- listDirectory binDir
+      mapM_ (\name -> do
+        let path = binDir </> name
+        permissions <- getPermissions path
+        setPermissions path (permissions { executable = True })) names
+      (: []) <$> canonicalizePath binDir)
     (return [])
   baseEnv <- getEnvironment
   -- The sandbox (parent of work/ and home/). Pinning GIT_CEILING_DIRECTORIES
