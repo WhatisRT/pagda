@@ -1,4 +1,4 @@
-cabal-version: 3.0
+cabal-version: 3.8
 name:          pagda
 version:       1.0.0
 synopsis:      Agda package manager using Nix
@@ -6,7 +6,46 @@ category:      Development
 homepage:      https://github.com/WhatisRT/pagda
 author:        WhatisRT
 license:       MIT
+license-file:  LICENSE
 build-type:    Simple
+extra-source-files:
+    README.md
+    .gitignore
+    default.nix
+    flake.nix
+    flake.lock
+    .github/actions/setup/action.yml
+    .github/workflows/*.yml
+    nix/**/*.nix
+    nix/**/*.sh
+    nix/**/*.js
+    nix/**/*.patch
+    examples/**/*.nix
+    examples/**/*.md
+    examples/**/*.agda-lib
+    examples/**/*.svg
+    test/e2e/README.md
+    test/e2e/build-missing-nix.golden
+    test/e2e/cases/**/*.agda
+    test/e2e/cases/**/*.agda-lib
+    test/e2e/cases/**/*.agdai
+    test/e2e/cases/**/*.conf
+    test/e2e/cases/**/*.golden
+    test/e2e/cases/**/*.lock
+    test/e2e/cases/**/*.nix
+    test/e2e/cases/**/*.sh
+    test/e2e/cases/**/*.txt
+    test/e2e/cases/**/.gitignore
+    test/e2e/cases/**/check-env
+    test/e2e/cases/**/cmd
+    test/e2e/cases/**/cwd
+    test/e2e/cases/**/nix
+    test/e2e/cases/**/program
+    test/e2e/cases/**/stdin
+    test/regression/cases/**/*.agda-lib
+    test/regression/cases/**/*.nix
+    test/regression/cases/**/.agda-lib
+    test/regression/cases/**/expect-parse-failure
 
 common warnings
     ghc-options: -Wall
