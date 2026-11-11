@@ -5,6 +5,14 @@ Wrote flake.nix
 === stderr ===
 === file: Foo.agda ===
 module Foo where
+=== file: flake.lock ===
+{
+  "nodes": {
+    "root": {}
+  },
+  "root": "root",
+  "version": 7
+}
 === file: flake.nix ===
 # Warning: only edit this file if you know what you're doing!
 # To customize the build, prefer the optional pagda.nix escape hatch.

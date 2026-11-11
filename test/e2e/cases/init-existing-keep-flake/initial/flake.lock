@@ -1,0 +1,12 @@
+{
+  "nodes": {
+    "dependency": {
+      "locked": {
+        "rev": "keep-this-revision"
+      }
+    },
+    "root": {}
+  },
+  "root": "root",
+  "version": 7
+}

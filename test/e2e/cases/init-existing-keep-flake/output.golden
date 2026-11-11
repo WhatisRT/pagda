@@ -3,6 +3,19 @@ exit code: 0
 Found existing library file mylib.agda-lib; leaving it untouched.
 flake.nix already exists; leaving it untouched (run `pagda regenerate` to update it).
 === stderr ===
+=== file: flake.lock ===
+{
+  "nodes": {
+    "dependency": {
+      "locked": {
+        "rev": "keep-this-revision"
+      }
+    },
+    "root": {}
+  },
+  "root": "root",
+  "version": 7
+}
 === file: flake.nix ===
 # my hand-written flake
 { }

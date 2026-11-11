@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+target=
+for arg in "$@"; do
+  case "$arg" in
+    path:*) target=${arg#path:} ;;
+  esac
+done
+test -n "$target"
+
+if test ! -e "$target/flake.lock"; then
+  cat > "$target/flake.lock" <<'EOF'
+{
+  "nodes": {
+    "root": {}
+  },
+  "root": "root",
+  "version": 7
+}
+EOF
+fi

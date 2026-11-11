@@ -6,7 +6,7 @@ let
   pagda = haskellPackages.callCabal2nix "pagda" ./. { };
   built = overrideCabal pagda (drv: {
     inherit doCheck;
-    testToolDepends = [ pkgs.git ];
+    testToolDepends = [ pkgs.git pkgs.nix ];
     # The plain Setup.hs used by the nixpkgs builder does not put internal
     # build-tool-depends executables on PATH (cabal-install does), so point
     # the test runner at the freshly built pagda explicitly.

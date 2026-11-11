@@ -13,6 +13,14 @@ data Test : Set where
   t1 t2 t3 : Test
 
 unquoteDecl DecEq-Test = derive-DecEq ((quote Test , DecEq-Test) ∷ [])
+=== file: proj/flake.lock ===
+{
+  "nodes": {
+    "root": {}
+  },
+  "root": "root",
+  "version": 7
+}
 === file: proj/flake.nix ===
 # Warning: only edit this file if you know what you're doing!
 # To customize the build, prefer the optional pagda.nix escape hatch.

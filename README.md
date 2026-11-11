@@ -49,7 +49,8 @@ With only `pagda init myproject`, Pagda prompts for the project root; press
 Enter to accept `./myproject`.
 
 This refuses to run if the target directory already contains a `flake.nix`,
-a `.agda-lib`, or a `Test.agda`, so it never clobbers existing work.
+`flake.lock`, a `.agda-lib`, or a `Test.agda`, so it never clobbers existing
+work.
 
 To add pagda to an **existing** Agda project, run this in its directory:
 
