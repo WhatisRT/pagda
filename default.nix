@@ -18,5 +18,12 @@ let
 in
 # Lets `nix run` and `lib.getExe` resolve the binary unambiguously.
 built.overrideAttrs (old: {
+  nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.makeWrapper ];
+  postInstall = (old.postInstall or "") + ''
+    for program in pagda agda-check; do
+      wrapProgram "$out/bin/$program" \
+        --prefix PATH : ${pkgs.lib.makeBinPath [ pkgs.git ]}
+    done
+  '';
   meta = (old.meta or { }) // { mainProgram = "pagda"; };
 })
