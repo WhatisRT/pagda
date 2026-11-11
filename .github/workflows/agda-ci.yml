@@ -45,7 +45,7 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     steps:
-      - uses: WhatisRT/pagda/.github/actions/setup@main
+      - uses: WhatisRT/pagda/.github/actions/setup@v1.0.0
         with:
           cache: ${{ inputs.cache }}
           gc-max-store-size: ${{ inputs.gc-max-store-size }}
@@ -72,7 +72,7 @@ jobs:
     env:
       publish: ${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch }}
     steps:
-      - uses: WhatisRT/pagda/.github/actions/setup@main
+      - uses: WhatisRT/pagda/.github/actions/setup@v1.0.0
         with:
           cache: ${{ inputs.cache }}
           gc-max-store-size: ${{ inputs.gc-max-store-size }}

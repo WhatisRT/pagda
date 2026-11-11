@@ -9,7 +9,7 @@ on: [push, pull_request]
 
 jobs:
   pagda:
-    uses: WhatisRT/pagda/.github/workflows/agda-ci.yml@main
+    uses: WhatisRT/pagda/.github/workflows/agda-ci.yml@v1.0.0
     with:
       cache: true
 === file: flake.nix ===
