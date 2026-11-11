@@ -243,7 +243,7 @@ must use the same condition:
 ```yaml
 jobs:
   pagda:
-    uses: WhatisRT/pagda/.github/workflows/agda-ci.yml@main
+    uses: WhatisRT/pagda/.github/workflows/agda-ci.yml@v1.0.0
     with: { pages: true, deploy: false }
   publish:
     needs: pagda

@@ -13,7 +13,7 @@ jobs:
       contents: read
       pages: write
       id-token: write
-    uses: WhatisRT/pagda/.github/workflows/agda-ci.yml@main
+    uses: WhatisRT/pagda/.github/workflows/agda-ci.yml@v1.0.0
     with:
       pages: true
 === file: flake.nix ===
