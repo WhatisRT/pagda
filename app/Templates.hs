@@ -66,12 +66,16 @@ ciYml pages cache = unlines $
      , "jobs:"
      , "  pagda:"
      ]
-  ++ (if pages then
+  ++ (if pages || cache then
        [ "    permissions:"
        , "      contents: read"
-       , "      pages: write"
-       , "      id-token: write"
        ]
+       ++ [ "      actions: write" | cache ]
+       ++ (if pages then
+            [ "      pages: write"
+            , "      id-token: write"
+            ]
+           else [])
      else [])
   ++ [ "    uses: WhatisRT/pagda/.github/workflows/agda-ci.yml@v1.0.0" ]
   ++ (let inputs = [ "pages: true" | pages ] ++ [ "cache: true" | cache ]
