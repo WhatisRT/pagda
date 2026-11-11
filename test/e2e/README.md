@@ -1,11 +1,15 @@
 # End-to-end tests
 
 Reproducible end-to-end tests for the `pagda` executable, built on
-[tasty-golden](https://hackage.haskell.org/package/tasty-golden). Each test
-case starts from an initial file tree, runs one `pagda` command in a fresh
+[tasty-golden](https://hackage.haskell.org/package/tasty-golden) and HUnit.
+Each golden test case starts from an initial file tree, runs one `pagda` command in a fresh
 sandbox (with an isolated `$HOME`), and compares the outcome — exit code,
 stdout, stderr and the complete resulting file tree — against a golden
 manifest.
+
+`InitTests.hs` and `UpdateTests.hs` also exercise real Nix with local source
+fixtures and a private writable store per test. They check persisted lockfile
+contents without network access or access to the user's Nix store.
 
 ## Running
 
@@ -39,10 +43,9 @@ Each directory under `cases/` is one test case:
 
 Notes:
 
-- Commands that would invoke real `nix` use the stub in `bin/nix`, which
-  records its arguments to `nix-args.txt` in the work directory. The
-  manifest therefore asserts exactly how pagda invokes nix, without
-  requiring network access or a real build.
+- Golden cases use `bin/nix` stubs to record command arguments or produce
+  deterministic lockfile fixtures. The HUnit scenarios cover actual Nix
+  lockfile creation, pin preservation, input resolution, and fork overrides.
 - Occurrences of the sandbox work directory and home directory are replaced
   by `$TESTDIR` and `$TESTHOME`, so goldens are machine-independent.
 - `.git` directories are excluded from the manifest.

@@ -77,6 +77,29 @@ Put `--` before Agda runtime options so Pagda's own runtime does not consume the
 pagda check src/MyModule.agda -- +RTS -M3G -H1G -RTS
 ```
 
+### Updating dependencies
+
+This is handled by `pagda update`:
+
+```sh
+pagda update # updates everything
+pagda update pagda
+pagda update standard-library
+```
+
+To lock an Agda library to a revision on a fork, use `INPUT@URL`:
+
+```sh
+pagda update standard-library@github:OWNER/agda-stdlib/REVISION
+pagda update standard-library-meta@github:OWNER/agda-stdlib-meta/REVISION
+```
+
+Other Nix-supported source URLs work too, including `git+https://HOST/REPO?rev=SHA`.
+Pass multiple `INPUT@URL` arguments to pin several inputs in one update; you can
+mix them with unpinned input names. Only the selected inputs are updated.
+
+This wraps `nix flake update`. Native Nix options can be put after the input arguments.
+
 ## Customizing the build via `pagda.nix`
 
 The `.agda-lib` file governs the library name and its dependencies, and

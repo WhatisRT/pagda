@@ -9,7 +9,6 @@ import System.IO (hFlush, hPutStrLn, stdout, stderr)
 import System.IO.Error (isUserError, ioeGetErrorString)
 import System.Exit (ExitCode(..), exitFailure)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
-import Control.Applicative ((<|>))
 import Control.Monad (filterM, when)
 import Data.List (intercalate, isPrefixOf, sort)
 import Data.Maybe (fromMaybe, isJust)
@@ -24,6 +23,7 @@ import Templates
 import Pagda
   ( UseUntracked(..), Config(..), getProjectRoot, getUntracked
   , buildDerivation, runProcess_, nixFlags, genAgda )
+import Update (onUpdate)
 
 data CliConfig = CliConfig
   { cliUseUntracked :: Maybe UseUntracked
@@ -34,6 +34,7 @@ data CliConfig = CliConfig
 data PagdaOpts
   = Init (Maybe String) (Maybe FilePath) Bool Bool
   | Build (Maybe String)
+  | Update [String]
   | GenAgda Bool
   | Shell (Maybe String)
   | AgdaLib2Nix FilePath
@@ -51,6 +52,8 @@ pagdaParser = subparser
       (progDesc "Initialize a project (use --existing to add pagda to an existing one)"))
   <> command "build" (info (Build <$> buildArg <**> helper)
       (progDesc "Build a project"))
+  <> command "update" (info (Update <$> updateArgs <**> helper)
+      (progDesc "Update dependencies; pin with INPUT@URL" <> forwardOptions))
   <> command "gen-agda" (info
       (GenAgda <$> switch (long "print-path" <> help "Print the path to the agda binary on stdout") <**> helper)
       (progDesc "Build agda (with the project's dependencies) and link it at .pagda/agda"))
@@ -83,6 +86,8 @@ pagdaParser = subparser
       <*> switch (long "existing" <> help "Add pagda to an existing project in the current directory")
     buildArg = optional $ argument str (metavar "[DERIVATION]" <> help "Optional target (default: default)")
     agdaLibArg = argument str (metavar "AGDA_LIB_FILE" <> help "Path to .agda-lib file")
+    updateArgs = many (strArgument (metavar "[INPUT[@URL]... | NIX_OPTION...]"
+        <> help "Dependencies to update, optionally pinned with @URL; put native Nix options after inputs"))
     -- forwardOptions (above) lets unrecognized flags through to here, so they
     -- reach agda; a positional file (if any) lands here too.
     checkArgs = many (strArgument (metavar "[AGDA_ARG...]"
@@ -417,6 +422,7 @@ runPagda = do
 
             case opts of
               Build mderiv -> runNix "build" mderiv cfg'
+              Update args -> onUpdate cfg' args
               GenAgda printPath -> onGenAgda cfg' printPath
               Shell mderiv -> runNix "develop" mderiv cfg'
               Check agdaArgs -> onCheck cfg' agdaArgs
